@@ -1,0 +1,2 @@
+prender el backend = cd backend/ node server.js = servidor corriendo en el puerto 3001
+prender frontend = cd frontend / npm run dev = vite localhost 5175
