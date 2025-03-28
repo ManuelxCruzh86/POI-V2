@@ -1,2 +1,15 @@
 prender el backend = cd backend/ node server.js = servidor corriendo en el puerto 3001
 prender frontend = cd frontend / npm run dev = vite localhost 5175
+
+
+Si no jala El Backend 
+Abre PowerShell
+netstat -ano | findstr :3001 - Ver procesos si ya esta ocupado el puerto 3001
+
+Si si esta Ocupado aplicar 
+
+taskkill /PID TUPID /F - taskkill /PID 19580 /F
+
+y ya accede al Backend y node server.js
+
+

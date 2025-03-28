@@ -10,7 +10,7 @@ const app = express();
 const server = http.createServer(app);
 const io = socketIo(server, {
     cors: {
-        origin: "http://localhost:5176", // URL de tu frontend
+        origin: "http://localhost:5177", // URL de tu frontend
         methods: ["GET", "POST"]
     }
 });
@@ -20,8 +20,7 @@ app.use(express.json());
 
 
 // Rutas
-app.use("/chat", chatRoutes);
-app.use("/routes/mensajes", mensajesRouter); // Agrega el router de mensajes
+app.use("/routes/mensajes", mensajes); // Agrega el router de mensajes
 
 
 io.on("connection", (socket) => {
