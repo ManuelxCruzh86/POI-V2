@@ -1,5 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
+
 
 function Perfil() {
     const [isEditing, setIsEditing] = useState(false);
@@ -7,6 +9,24 @@ function Perfil() {
     const [email, setEmail] = useState("chesterPark@example.com");
     const [estaActivo, setEstaActivo] = useState(true);
     const [foto, setFoto] = useState("/chester.jpg");
+
+    const [user, setUser] = useState(null);
+    const navigate = useNavigate();
+
+    useEffect(() => {
+        const storedUser = localStorage.getItem("user");
+        if (storedUser) {
+            setUser(JSON.parse(storedUser));
+        } else {
+            navigate("/login");
+        }
+    }, [navigate]);
+
+    const handleLogout = () => {
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
+        navigate("/login");
+    };
     
     const handleFotoChange = (e) => {
         const file = e.target.files[0];
@@ -30,43 +50,52 @@ function Perfil() {
             </nav>
 
             <main className="flex-1 flex items-center justify-center p-4">
-                <div className="w-full max-w-md bg-gray-800 p-8 rounded-xl shadow-lg space-y-6">
-                    <h2 className="text-2xl font-bold text-center">Mi Perfil</h2>
-                    <div className="flex flex-col items-center space-y-4">
-                        <img src={foto} alt="Foto de perfil" className="h-32 w-32 rounded-full object-cover border-2 border-black-900" />
-                        {isEditing && (
-                            <>
-                                <input type="file" id="foto-upload" className="hidden" accept="image/*" onChange={handleFotoChange} />
-                                <label htmlFor="foto-upload" className="px-4 py-2 bg-blue-300 text-gray-900 rounded font-semibold hover:bg-blue-900 transition-colors cursor-pointer">Cambiar Foto</label>
-                            </>
-                        )}
-                    </div>
-
-                    <div>
-                        <label className="block text-sm font-semibold mb-2">Nombre</label>
-                        <input type="text" value={nombre} onChange={(e) => setNombre(e.target.value)} className="w-full px-4 py-2 bg-gray-700 rounded focus:ring-2 focus:ring-yellow-400 focus:outline-none" disabled={!isEditing} />
-                    </div>
-                    
-                    <div>
-                        <label className="block text-sm font-semibold mb-2">Correo Electrónico</label>
-                        <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} className="w-full px-4 py-2 bg-gray-700 rounded focus:ring-2 focus:ring-yellow-400 focus:outline-none" disabled={!isEditing} />
-                    </div>
-                    
-                    <div>
-                        <label className="block text-sm font-semibold mb-2">Estado</label>
-                        <label className="inline-flex items-center">
-                            <input type="checkbox" checked={estaActivo} onChange={(e) => setEstaActivo(e.target.checked)} disabled={!isEditing} className="form-checkbox h-5 w-5 text-yellow-400 rounded focus:ring-yellow-400" />
-                            <span className="ml-2">{estaActivo ? 'Activo' : 'Inactivo'}</span>
-                        </label>
-                    </div>
-
-                    <div className="flex flex-col space-y-4">
-                        <button onClick={toggleEditing} className="w-full bg-yellow-400 text-white-200 px-4 py-2 rounded font-semibold hover:bg-yellow-300 transition-colors">
-                            {isEditing ? "Guardar Cambios" : "Editar Perfil"}
-                        </button>
-                    </div>
+    <div className="w-full max-w-md bg-gray-800 p-8 rounded-xl shadow-lg space-y-6">
+        {user ? (
+            <>
+                <h2 className="text-2xl font-bold text-center">Perfil de {user.nombre}</h2>
+                <div className="flex flex-col items-center space-y-4">
+                    <img src={foto} alt="Foto de perfil" className="h-32 w-32 rounded-full object-cover border-2 border-black-900" />
+                    {isEditing && (
+                        <>
+                            <input type="file" id="foto-upload" className="hidden" accept="image/*" onChange={handleFotoChange} />
+                            <label htmlFor="foto-upload" className="px-4 py-2 bg-blue-300 text-gray-900 rounded font-semibold hover:bg-blue-900 transition-colors cursor-pointer">Cambiar Foto</label>
+                        </>
+                    )}
                 </div>
-            </main>
+
+                <div>
+                    <label className="block text-sm font-semibold mb-2">Nombre</label>
+                    <input type="text" value={nombre} onChange={(e) => setNombre(e.target.value)} className="w-full px-4 py-2 bg-gray-700 rounded focus:ring-2 focus:ring-yellow-400 focus:outline-none" disabled={!isEditing} />
+                </div>
+                
+                <div>
+                    <label className="block text-sm font-semibold mb-2">Correo Electrónico</label>
+                    <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} className="w-full px-4 py-2 bg-gray-700 rounded focus:ring-2 focus:ring-yellow-400 focus:outline-none" disabled={!isEditing} />
+                </div>
+                
+                <div>
+                    <label className="block text-sm font-semibold mb-2">Estado</label>
+                    <label className="inline-flex items-center">
+                        <input type="checkbox" checked={estaActivo} onChange={(e) => setEstaActivo(e.target.checked)} disabled={!isEditing} className="form-checkbox h-5 w-5 text-yellow-400 rounded focus:ring-yellow-400" />
+                        <span className="ml-2">{estaActivo ? 'Activo' : 'Inactivo'}</span>
+                    </label>
+                </div>
+
+                <div className="flex flex-col space-y-4">
+                    <button onClick={toggleEditing} className="w-full bg-yellow-400 text-white-200 px-4 py-2 rounded font-semibold hover:bg-yellow-300 transition-colors">
+                        {isEditing ? "Guardar Cambios" : "Editar Perfil"}
+                    </button>
+                    <button onClick={handleLogout} className="w-full bg-red-500 hover:bg-red-700 text-white px-4 py-2 rounded font-semibold">
+                        Cerrar Sesión
+                    </button>
+                </div>
+            </>
+        ) : (
+            <p className="text-center">Cargando...</p>
+        )}
+    </div>
+</main>
         </div>
     );
 }
