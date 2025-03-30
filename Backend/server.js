@@ -23,7 +23,6 @@ app.use(express.json());
 app.use("/routes/mensajes", mensajes); // Agrega el router de mensajes
 
 
-
 io.on("connection", (socket) => {
     console.log("Usuario conectado:", socket.id);
 
