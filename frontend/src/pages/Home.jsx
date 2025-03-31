@@ -4,6 +4,9 @@ import { Link, useNavigate } from "react-router-dom";
 function Home() {
     const [user, setUser] = useState(null);
     const navigate = useNavigate();
+    const userId = localStorage.getItem("userId");
+    console.log("ID del usuario:", userId);
+
 
     useEffect(() => {
         const storedUser = localStorage.getItem("user");
@@ -64,7 +67,6 @@ function Home() {
 
                     {user ? (
                         <>
-                            {/* 🔹 Ahora el nombre del usuario es clickeable */}
                             <span className="text-lg cursor-pointer hover:underline" onClick={handleProfile}>
                                 {user.nombre}
                             </span>
