@@ -18,26 +18,31 @@ const server = http.createServer(app);
 
 const io = socketIo(server, {
     cors: {
-        origin: "http://localhost:5178", // pon el puerto correcto de tu frontend
+        origin: "http://localhost:5179", // pon el puerto correcto de tu frontend
         methods: ["GET", "POST"],
         credentials: true
     }
 });
 
 io.on('connection', (socket) => {
-    console.log('Se ha conectado un nuevo cliente:');
+    console.log('Se ha conectado un nuevo cliente:', socket.id);
+    
+    // Generar un nombre de usuario único temporal (ej: Usuario_ABC123)
+    const nombreUsuario = `Usuario_${socket.id.slice(0, 6).toUpperCase()}`;
+    console.log('Enviando nombre de usuario:', nombreUsuario);
 
-    /* socket.broadcast.emit('chat_message',{
-        usuario: 'INFO',
-        mensaje: 'Se ha conectado un nuevo usuario'
-    }); */
+    // Enviar al cliente su nombre de usuario
+    socket.emit('configuracion_inicial', {
+        usuario: nombreUsuario
+    });
 
     socket.on('chat_message', (data) => {
+        console.log('Mensaje recibido:', data);
         io.emit('chat_message', {
-            usuario:data.usuario || 'Anonimo',
-        mensaje:data.mensaje
+            usuario: data.usuario,
+            mensaje: data.mensaje
+        });
     });
-});
 });
 
 
