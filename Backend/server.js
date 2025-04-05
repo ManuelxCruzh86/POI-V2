@@ -12,6 +12,7 @@ const SECRET_KEY = "tu_clave_secreta";
 const app = express();
 const server = http.createServer(app);
 
+
 const io = socketIo(server, {
     cors: {
         origin: "http://localhost:5177", // Asegúrate que coincide con tu puerto de frontend
