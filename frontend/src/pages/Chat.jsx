@@ -1,134 +1,159 @@
-import React, { useState, useRef, useEffect } from "react";
-import { FaMicrophone, FaMicrophoneSlash, FaVideo, FaVideoSlash, FaPhoneSlash, FaUser } from "react-icons/fa";
-import clipIcon from '../assets/adjunto.png';
-import { Link } from "react-router-dom";
+import React, { useState, useEffect, useRef } from "react";
+import { FaUser } from "react-icons/fa";
+import { Link, useParams } from "react-router-dom";
 import { io } from "socket.io-client";
 
-const socket = io("http://localhost:3001"); //Puerto del backend
+const token = localStorage.getItem("token");
+const socket = io("http://localhost:3001", {
+  auth: { token },
+  withCredentials: true
+});
 
-
-function ChatIndividual({ userId, receiverId }) {
-  const [showNotifications, setShowNotifications] = useState(false);
-  const [showRewards, setShowRewards] = useState(false);
+function ChatIndividual() {
   const [mensaje, setMensaje] = useState("");
   const [mensajes, setMensajes] = useState([]);
-  const [archivo, setArchivo] = useState(null);
-  const [cifrado, setCifrado] = useState(false);
-  const [isOpen, setIsOpen] = useState(false);
-  const [isMicOn, setIsMicOn] = useState(true);
-  const [isVideoOn, setIsVideoOn] = useState(true);
-  const [showPreview, setShowPreview] = useState(true);
   const [nombreUser, setNombreUser] = useState("");
-  const videoRef = useRef(null);
-
   const [usuarios, setUsuarios] = useState([
     { id: 1, nombre: "Juan", estado: "", activo: 1 },
     { id: 2, nombre: "Ana", estado: "", activo: 0 },
     { id: 3, nombre: "Carlos", estado: "", activo: 0 },
     { id: 4, nombre: "María", estado: "", activo: 0 },
   ]);
-
-  // obtencion de mensajes de el backend
-  const obtenerMensajes = async () => {
-    try {
-        const response = await fetch(`http://localhost:3001/routes/mensajes/obtener/${userId}/${receiverId}`);
-        if (!response.ok) throw new Error("Error al obtener los mensajes");
-
-        const data = await response.json();
-        setMensajes(data);
-    } catch (error) {
-        console.error("Error:", error);
-    }
-};
+  
+  const { receiverId } = useParams(); // Obtiene el ID de la URL
+  const userId = localStorage.getItem("userId");
+  const mensajesContainerRef = useRef(null);
+  const usuarioActivo = usuarios.find(u => u.id === parseInt(receiverId));
 
 
+  // Nuevo efecto para cargar usuarios y socket
   useEffect(() => {
-    obtenerMensajes();
-  }, [receiverId]);
+    // Cargar usuarios conectados
+    const cargarUsuarios = async () => {
+        try {
+            const response = await fetch("http://localhost:3001/auth/usuarios");
+            const data = await response.json();
+            setUsuarios(data);
+        } catch (error) {
+            console.error("Error cargando usuarios:", error);
+        }
+    };
 
-  // Escuchar mensajes en tiempo real
-  useEffect(() => {
-    socket.on("mensaje_recibido", (mensajeRecibido) => {
-        setMensajes((prevMensajes) => [...prevMensajes, mensajeRecibido]);
+    const cargarHistorial = async () => {
+      try {
+          const response = await fetch(
+              `http://localhost:3001/api/mensajes/obtener/${userId}/${receiverId}`
+          );
+  
+          // Verificar si la respuesta es JSON
+          const contentType = response.headers.get("content-type");
+          if (!contentType || !contentType.includes("application/json")) {
+              throw new Error("La respuesta no es JSON");
+          }
+  
+          const data = await response.json();
+          setMensajes(data);
+      } catch (error) {
+          console.error("Error cargando mensajes:", error.message);
+      }
+  };
+
+    // Configurar Socket.io
+    socket.on("mensaje_privado", (nuevoMensaje) => {
+        setMensajes(prev => [...prev, nuevoMensaje]);
     });
 
+    cargarUsuarios();
+
     return () => {
-        socket.off("mensaje_recibido");
+        socket.off("mensaje_privado");
     };
 }, []);
 
+  useEffect(() => {
+    const cargarHistorial = async () => {
+      try {
+        const response = await fetch(
+          `http://localhost:3001/api/mensajes/obtener/${userId}/${receiverId}`
+        );
+        const data = await response.json();
+        setMensajes(data);
+      } catch (error) {
+        console.error("Error cargando mensajes:", error);
+      }
+    };
+    
+    if (userId && receiverId) cargarHistorial();
 
-  const enviarMensaje = async (e) => {
+    socket.on("connect", () => {
+      socket.emit("unir_usuario", userId);
+    });
+
+    socket.on("mensaje_privado", (nuevoMensaje) => {
+      setMensajes(prev => [...prev, nuevoMensaje]);
+    });
+
+    return () => {
+      socket.off("mensaje_privado");
+      socket.off("connect");
+    };
+  }, [userId, receiverId]);
+
+  const enviarMensaje = (e) => {
     e.preventDefault();
-    if (!mensaje.trim()) return;
+    if (!mensaje.trim() || !receiverId) return;
 
-    const nuevoMensaje = {
-        contenido: mensaje,
-        remitente_id: userId,
+    const mensajeData = {
         destinatario_id: receiverId,
+        remitente_id: userId,
+        contenido: mensaje
     };
 
-    try {
-        const response = await fetch("http://localhost:3001/routes/mensajes/enviar", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(nuevoMensaje),
-        });
-
-        if (!response.ok) throw new Error("Error al enviar el mensaje");
-
-        const mensajeGuardado = await response.json();
-        setMensajes([...mensajes, mensajeGuardado]); 
-        setMensaje(""); 
-    } catch (error) {
-        console.error("Error:", error);
-    }
+    // Resetear campo primero para mejor experiencia
+    setMensaje("");
+    
+    // Enviar por socket
+    socket.emit("mensaje", mensajeData);
 };
 
-
   useEffect(() => {
-    const usuarioActivo = usuarios.find((usuario) => usuario.activo === 1);
-    if (usuarioActivo) {
-      setNombreUser(usuarioActivo.nombre);
+    if (mensajesContainerRef.current) {
+      mensajesContainerRef.current.scrollTop = mensajesContainerRef.current.scrollHeight;
     }
-  }, [usuarios]);
+  }, [mensajes]);
 
-  const manejarClick = (usuarioId) => {
-    const usuariosActualizados = usuarios.map((usuario) => {
-      return {
-        ...usuario,
-        activo: usuario.id === usuarioId ? 1 : 0,
-      };
-    });
-    setUsuarios(usuariosActualizados);
-
-    const usuarioActivo = usuarios.find((usuario) => usuario.id === usuarioId);
-    setNombreUser(usuarioActivo ? usuarioActivo.nombre : "");
-  };
 
   return (
     <div className="h-full w-full flex bg-gray-900 text-white">
+      {/* Sidebar de usuarios */}
       <aside className="w-64 bg-gray-800 p-4 shadow-lg">
         <Link to="/" className="text-blue-400 hover:underline mt-4">
           ← Volver al inicio
         </Link>
         <h2 className="text-xl font-bold mb-4 mt-9">Usuarios Conectados</h2>
         <ul className="space-y-2">
-          {usuarios.map((usuario) => (
-            <li
-              key={usuario.id}
-              className={`flex items-center space-x-2 p-2 rounded-lg cursor-pointer ${
-                1 === usuario.activo ? "bg-blue-500 text-white" : "bg-gray-700 text-gray-300"
-              }`}
-              onClick={() => manejarClick(usuario.id)}
+        {usuarios.map((usuario) => (
+            <Link 
+                key={usuario.id}
+                to={`/chat/${usuario.id}`}
+                className={`block p-2 rounded-lg ${
+                    usuario.id === parseInt(receiverId) 
+                        ? "bg-blue-500 text-white" 
+                        : "bg-gray-700 hover:bg-gray-600 text-gray-300"
+                }`}
             >
-              <span>{usuario.estado}</span>
-              <span>{usuario.nombre}</span>
-            </li>
-          ))}
-        </ul>
+                <div className="flex items-center gap-2">
+                    <div className={`h-2 w-2 rounded-full ${
+                        usuario.conectado ? 'bg-green-500' : 'bg-red-500'
+                    }`}></div>
+                    {usuario.nombre}
+                </div>
+            </Link>
+        ))}
+    </ul>
       </aside>
 
+      {/* Área principal del chat */}
       <main className="relative flex-1 flex flex-col">
         <nav className="p-4 bg-gray-800 flex justify-between items-center shadow-md">
           <div className="flex items-center space-x-4">
@@ -137,6 +162,7 @@ function ChatIndividual({ userId, receiverId }) {
           </div>
         </nav>
 
+        {/* Encabezado del chat */}
         <div className="p-4 bg-gray-700 flex justify-between items-center shadow-md">
           <div className="flex items-center space-x-4">
             <FaUser className="text-gray-500 w-8 h-8" />
@@ -144,21 +170,28 @@ function ChatIndividual({ userId, receiverId }) {
           </div>
         </div>
 
-        <div className="flex-none p-6 overflow-y-auto">
+        {/* Mensajes */}
+        <div 
+          className="flex-1 overflow-y-auto p-6 space-y-4"
+          ref={mensajesContainerRef}
+        >
           {mensajes.map((msg, index) => (
-            <div key={index} className="mb-4">
-              <div
-                className={`p-4 rounded-lg max-w-md ${
-                  msg.remitente_id === userId ? "bg-blue-500 text-white" : "bg-gray-700 text-gray-300"
-                }`}
-              >
-                <p>{msg.contenido}</p>
-              </div>
-            </div>
-          ))}
+    <div 
+        key={index} // Usar index temporalmente
+        className={`flex ${msg.remitente_id == userId ? "justify-end" : "justify-start"}`}
+    >
+        <div className={`p-3 rounded-lg max-w-md ${msg.remitente_id == userId ? "bg-blue-500" : "bg-gray-700"}`}>
+            <p className="text-white">{msg.contenido}</p>
+            <span className="text-xs text-gray-300">
+                {new Date(msg.fecha).toLocaleTimeString()}
+            </span>
+        </div>
+    </div>
+))}
         </div>
 
-        <form onSubmit={enviarMensaje} className="absolute inset-x-0 bottom-0 p-4 bg-gray-800 flex flex-col gap-2">
+        {/* Formulario de envío */}
+        <form onSubmit={enviarMensaje} className="sticky bottom-0 p-4 bg-gray-800">
           <div className="flex items-center gap-2 bg-gray-700 p-2 rounded-lg">
             <input
               type="text"
@@ -171,7 +204,6 @@ function ChatIndividual({ userId, receiverId }) {
               type="submit"
               className="bg-yellow-400 text-gray-100 px-4 py-2 rounded-lg font-semibold hover:bg-yellow-500 transition"
             >
-              
               Enviar
             </button>
           </div>

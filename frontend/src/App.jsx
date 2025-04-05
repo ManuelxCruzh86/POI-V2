@@ -17,7 +17,7 @@ function App() {
       <div className="h-screen w-screen">
         <Routes>
           <Route path="/" element={<Home />} />
-          <Route path="/chat" element={<Chat />} />
+          <Route path="/chat/:receiverId" element={<Chat />} />
           <Route path="/videollamada" element={<Videollamada />} />
           <Route path="/tareas" element={<Tareas />} />
           <Route path="/recompensas" element={<Recompensas />} />

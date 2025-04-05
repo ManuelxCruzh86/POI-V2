@@ -42,6 +42,20 @@ router.post("/login", (req, res) => {
     });
 });
 
+router.get("/usuarios", (req, res) => {
+    db.query("SELECT id, nombre FROM Usuarios", (err, results) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json(results);
+    });
+});
+
+router.get('/api/usuarios', (req, res) => {
+    db.query('SELECT id, nombre, email, conectado FROM Usuarios', (err, results) => {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json(results);
+    });
+  });
+
 
 router.get("/perfil", (req, res) => {
     const token = req.headers.authorization?.split(" ")[1];

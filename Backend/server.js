@@ -1,3 +1,4 @@
+// server.js
 const express = require("express");
 const http = require("http");
 const socketIo = require("socket.io");
@@ -5,67 +6,85 @@ const cors = require("cors");
 const mensajes = require("./routes/mensajes"); 
 const authRoutes = require("./routes/auth");
 const db = require("./db");
-
-
+const jwt = require("jsonwebtoken");
+const SECRET_KEY = "tu_clave_secreta";
 
 const app = express();
 const server = http.createServer(app);
+
 const io = socketIo(server, {
     cors: {
-        origin: "http://localhost:5175", // URL de tu frontend
-        methods: ["GET", "POST"]
+        origin: "http://localhost:5177", // Asegúrate que coincide con tu puerto de frontend
+        methods: ["GET", "POST"],
+        credentials: true
     }
 });
+
+// Función para obtener usuarios conectados
+const obtenerUsuariosConectados = async () => {
+    try {
+        const [results] = await db.promise().query(
+            'SELECT id, nombre, email, conectado FROM Usuarios'
+        );
+        return results;
+    } catch (error) {
+        console.error("Error obteniendo usuarios:", error);
+        return [];
+    }
+};
 
 app.use(cors());
 app.use(express.json());
 
-
 // Rutas
-app.use("/routes/mensajes", mensajes); 
+app.use("/api/mensajes", mensajes);
 app.use("/auth", authRoutes);
 
+app.use((req, res) => {
+    res.status(404).json({ 
+        error: "Ruta no encontrada",
+        mensaje: "La URL solicitada no existe en este servidor"
+    });
+});
+
+io.use((socket, next) => {
+    const token = socket.handshake.auth.token;
+    jwt.verify(token, SECRET_KEY, (err, user) => {
+        if (err) return next(new Error("Autenticación fallida"));
+        socket.userId = user.id;
+        next();
+    });
+});
+
+// Manejar conexiones Socket.io
+io.on("connection", async (socket) => {
+    console.log("Usuario conectado:", socket.id, "User ID:", socket.userId);
 
 
 
-io.on("connection", (socket) => {
-    console.log("Usuario conectado:", socket.id);
-
-    socket.on("mensaje", ({ remitente_id, destinatario_id, grupo_id, contenido, tipo }) => {
-        const query = "INSERT INTO Mensajes (remitente_id, destinatario_id, grupo_id, contenido, tipo) VALUES (?, ?, ?, ?, ?)";
-        db.query(query, [remitente_id, destinatario_id || null, grupo_id || null, contenido, tipo], (err, result) => {
-            if (err) {
-                console.error("Error al guardar el mensaje:", err);
-                return;
-            }
-
-            const mensajeGuardado = {
-                id: result.insertId,
-                remitente_id,
-                destinatario_id,
-                grupo_id,
-                contenido,
-                tipo,
-                fecha: new Date(),
+    socket.on("mensaje", (mensajeData) => {
+        try {
+            const mensaje = {
+                ...mensajeData,
+                fecha: new Date()
             };
-
-            if (destinatario_id) {
-                io.to(destinatario_id).emit("mensaje_recibido", mensajeGuardado);
-                io.to(remitente_id).emit("mensaje_recibido", mensajeGuardado);
-            } else {
-                io.emit("mensaje_grupal", mensajeGuardado);
-            }
-        });
+    
+            // Emitir a AMBOS usuarios
+            io.to(mensajeData.destinatario_id).emit("mensaje_privado", mensaje);
+            io.to(mensajeData.remitente_id).emit("mensaje_privado", mensaje);
+            
+        } catch (error) {
+            console.error("Error:", error);
+        }
     });
 
     socket.on("disconnect", () => {
         console.log("Usuario desconectado:", socket.id);
     });
+
 });
 
 server.listen(3001, () => {
-    console.log("Servidor corriendo en el puerto 3001");});
-
-app.listen(5000, () => 
-    console.log("Servidor corriendo en el puerto 5000"));
+    console.log("Servidor corriendo en el puerto 3001");
+});
 

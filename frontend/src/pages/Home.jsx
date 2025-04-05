@@ -84,7 +84,7 @@ function Home() {
 
             <main className="flex-1 flex flex-col items-center justify-center py-10 bg-gray-900">
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-6 w-full max-w-5xl">
-                    <Link to="/chat" className="bg-gray-800 p-6 rounded-xl flex flex-col items-center shadow-lg hover:bg-gray-700 transition w-full">
+                    <Link to="/chat/1" className="bg-gray-800 p-6 rounded-xl flex flex-col items-center shadow-lg hover:bg-gray-700 transition w-full">
                         <span className="text-5xl">💬</span>
                         <p className="font-semibold mt-2 text-xl">Chat Privado</p>
                         <p className="text-sm opacity-75">Mensajes individuales y cifrado opcional.</p>

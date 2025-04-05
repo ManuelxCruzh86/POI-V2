@@ -14,7 +14,7 @@ function Login() {
     const handleLogin = async (e) => {
         e.preventDefault();
 
-        const response = await fetch("http://localhost:5000/auth/login", {
+        const response = await fetch("http://localhost:3001/auth/login", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ email, password }),
@@ -35,7 +35,7 @@ function Login() {
     const handleRegister = async (e) => {
         e.preventDefault();
     
-        const response = await fetch("http://localhost:5000/auth/register", {
+        const response = await fetch("http://localhost:3001/auth/register", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ nombre: username, email, password }),
