@@ -3,7 +3,6 @@ import { Link } from "react-router-dom";
 function UsuariosConectados() {
   const [usuarios, setUsuarios] = useState([]);
   
-  // Cargar usuarios reales desde tu API
   useEffect(() => {
     const cargarUsuarios = async () => {
       const response = await fetch("http://localhost:3001/usuarios");

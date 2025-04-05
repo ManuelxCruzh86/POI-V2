@@ -18,7 +18,7 @@ const server = http.createServer(app);
 
 const io = socketIo(server, {
     cors: {
-        origin: "http://localhost:5179", // pon el puerto correcto de tu frontend
+        origin: "http://localhost:5179", 
         methods: ["GET", "POST"],
         credentials: true
     }
@@ -27,11 +27,10 @@ const io = socketIo(server, {
 io.on('connection', (socket) => {
     console.log('Se ha conectado un nuevo cliente:', socket.id);
     
-    // Generar un nombre de usuario único temporal (ej: Usuario_ABC123)
+    // Nombre de usuario único temporal 
     const nombreUsuario = `Usuario_${socket.id.slice(0, 6).toUpperCase()}`;
     console.log('Enviando nombre de usuario:', nombreUsuario);
 
-    // Enviar al cliente su nombre de usuario
     socket.emit('configuracion_inicial', {
         usuario: nombreUsuario
     });
