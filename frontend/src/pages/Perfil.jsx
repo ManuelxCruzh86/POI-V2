@@ -5,10 +5,10 @@ import { useNavigate } from "react-router-dom";
 
 function Perfil() {
     const [isEditing, setIsEditing] = useState(false);
-    const [nombre, setNombre] = useState("Chester Benington");
-    const [email, setEmail] = useState("chesterPark@example.com");
+    const [nombre, setNombre] = useState(" ");
+    const [email, setEmail] = useState("");
     const [estaActivo, setEstaActivo] = useState(true);
-    const [foto, setFoto] = useState("/chester.jpg");
+    const [foto, setFoto] = useState("/anonimo.png");
 
     const [user, setUser] = useState(null);
     const navigate = useNavigate();
