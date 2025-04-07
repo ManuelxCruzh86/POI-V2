@@ -18,7 +18,7 @@ const server = http.createServer(app);
 
 const io = socketIo(server, {
     cors: {
-        origin: "http://localhost:5179", 
+        origin: "http://localhost:5180", 
         methods: ["GET", "POST"],
         credentials: true
         
@@ -46,13 +46,6 @@ io.on('connection', (socket) => {
 });
 
 
-/* const io = socketIo(server, {
-    cors: {
-        origin: "http://localhost:5177", // Asegúrate que coincide con tu puerto de frontend
-        methods: ["GET", "POST"],
-        credentials: true
-    }
-}); */
 
 const obtenerUsuariosConectados = async () => {
     try {
@@ -67,7 +60,7 @@ const obtenerUsuariosConectados = async () => {
 };
 
 app.use(cors({
-    origin: "http://localhost:5178",
+    origin: "http://localhost:5180",
     credentials: true
 }));
 app.use(express.json());
