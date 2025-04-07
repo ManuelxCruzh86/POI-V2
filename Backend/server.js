@@ -21,6 +21,7 @@ const io = socketIo(server, {
         origin: "http://localhost:5179", 
         methods: ["GET", "POST"],
         credentials: true
+        
     }
 });
 
