@@ -2,10 +2,10 @@ import { Link } from "react-router-dom";
 
 function UsuariosConectados() {
   const [usuarios, setUsuarios] = useState([]);
-  
+
   useEffect(() => {
     const cargarUsuarios = async () => {
-      const response = await fetch("http://localhost:3001/usuarios");
+      const response = await fetch("http://192.168.68.104:3001/usuarios");
       const data = await response.json();
       setUsuarios(data);
     };

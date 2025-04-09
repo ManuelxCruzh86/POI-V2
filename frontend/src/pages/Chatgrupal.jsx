@@ -2,9 +2,15 @@ import React, { useState, useEffect, useRef } from "react";
 import { FaPaperPlane, FaUser, FaUsers } from "react-icons/fa";
 import { Link } from "react-router-dom";
 import { io } from "socket.io-client";
-import { LiMensaje, UlMensajes } from './ui-components';
+import { LiMensaje, UlMensajes } from "./ui-components";
 
-const socket = io("http://localhost:3001");
+/*
+Si el cliente está en el mismo equipo del servidor, solo pon localhost
+Si el cliente está en otro equipo, pon la IP local y el puerto del servidor
+
+Para saber cuál es la IP local, ejecuta ipconfig en la terminal
+*/
+const socket = io("http://192.168.68.104:3001");
 
 const ChatGrupal = () => {
   const [nuevoMensaje, setNuevoMensaje] = useState("");
@@ -14,39 +20,46 @@ const ChatGrupal = () => {
   const mensajesContainerRef = useRef(null);
 
   useEffect(() => {
-    socket.on('connect', () => console.log("Conectado al servidor"));
-    
-    socket.on('configuracion_inicial', (data) => {
+    socket.on("connect", () => console.log("Conectado al servidor"));
+
+    socket.on("configuracion_inicial", (data) => {
       setMiUsuario(data.usuario);
-      console.log('Usuario asignado:', data.usuario);
+      console.log("Usuario asignado:", data.usuario);
     });
 
-    socket.on('chat_message', (data) => {
-      setMensajes(prev => [...prev, {
-        ...data,
-        hora: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
-      }]);
+    socket.on("chat_message", (data) => {
+      setMensajes((prev) => [
+        ...prev,
+        {
+          ...data,
+          hora: new Date().toLocaleTimeString([], {
+            hour: "2-digit",
+            minute: "2-digit",
+          }),
+        },
+      ]);
     });
 
     return () => {
-      socket.off('connect');
-      socket.off('configuracion_inicial');
-      socket.off('chat_message');
+      socket.off("connect");
+      socket.off("configuracion_inicial");
+      socket.off("chat_message");
     };
   }, []);
 
   useEffect(() => {
     if (mensajesContainerRef.current) {
-      mensajesContainerRef.current.scrollTop = mensajesContainerRef.current.scrollHeight;
+      mensajesContainerRef.current.scrollTop =
+        mensajesContainerRef.current.scrollHeight;
     }
   }, [mensajes]);
 
   const enviarMensaje = (e) => {
     e.preventDefault();
     if (nuevoMensaje.trim() && miUsuario) {
-      socket.emit('chat_message', {
+      socket.emit("chat_message", {
         usuario: miUsuario,
-        mensaje: nuevoMensaje
+        mensaje: nuevoMensaje,
       });
       setNuevoMensaje("");
     }
@@ -89,7 +102,9 @@ const ChatGrupal = () => {
           {mensajes.map((msg, index) => (
             <div
               key={index}
-              className={`flex ${msg.usuario === miUsuario ? "justify-end" : "justify-start"}`}
+              className={`flex ${
+                msg.usuario === miUsuario ? "justify-end" : "justify-start"
+              }`}
             >
               <div
                 className={`max-w-md p-3 rounded-lg ${

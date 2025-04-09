@@ -2,8 +2,8 @@ import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { io } from "socket.io-client";
 
-const socket = io("http://localhost:3001", {
-  auth: { token: localStorage.getItem("token") }
+const socket = io("http://192.168.68.104:3001", {
+  auth: { token: localStorage.getItem("token") },
 });
 
 export default function Usuarios() {
@@ -13,7 +13,7 @@ export default function Usuarios() {
   useEffect(() => {
     const cargarUsuarios = async () => {
       try {
-        const response = await fetch("http://localhost:3001/api/usuarios");
+        const response = await fetch("http://192.168.68.104:3001/api/usuarios");
         const data = await response.json();
         setUsers(data);
       } catch (error) {
@@ -37,14 +37,22 @@ export default function Usuarios() {
     <div className="h-full w-full bg-gray-900 text-white flex flex-col items-center">
       <nav className="w-full bg-gray-800 text-white py-4 px-6 flex justify-between items-center shadow-md">
         <div className="flex items-center space-x-4">
-          <img src="/conexxo.png" className="h-24 w-24 object-contain" alt="Logo" />
+          <img
+            src="/conexxo.png"
+            className="h-24 w-24 object-contain"
+            alt="Logo"
+          />
           <h1 className="text-3xl font-bold">ConneXXo</h1>
         </div>
-        <Link to="/" className="text-yellow-400 hover:text-yellow-300">← Volver al Inicio</Link>
+        <Link to="/" className="text-yellow-400 hover:text-yellow-300">
+          ← Volver al Inicio
+        </Link>
       </nav>
 
       <main className="grow w-full max-w-4xl flex flex-col py-6">
-        <h2 className="text-4xl font-bold mb-6 text-center">Estado de Usuarios</h2>
+        <h2 className="text-4xl font-bold mb-6 text-center">
+          Estado de Usuarios
+        </h2>
         <div className="flex-1 overflow-y-auto w-full space-y-4 p-4 bg-gray-800 rounded-lg shadow-lg">
           {users.map((user) => (
             <div
