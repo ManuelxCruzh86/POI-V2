@@ -9,7 +9,6 @@ const socket = io("http://localhost:3001", {
 export default function Usuarios() {
   const [users, setUsers] = useState([]);
 
-  // Cargar usuarios iniciales y configurar WebSocket
   useEffect(() => {
     const cargarUsuarios = async () => {
       try {
@@ -23,7 +22,6 @@ export default function Usuarios() {
 
     cargarUsuarios();
 
-    // Escuchar actualizaciones de estado en tiempo real
     socket.on("usuarios_actualizados", (usuariosActualizados) => {
       setUsers(usuariosActualizados);
     });
@@ -40,7 +38,7 @@ export default function Usuarios() {
           <img src="/conexxo.png" className="h-24 w-24 object-contain" alt="Logo" />
           <h1 className="text-3xl font-bold">ConneXXo</h1>
         </div>
-        <Link to="/" className="text-yellow-400 hover:text-yellow-300">← Volver al Inicio</Link>
+        <Link to="/home2" className="text-yellow-400 hover:text-yellow-300">← Volver al Inicio</Link>
       </nav>
 
       <main className="grow w-full max-w-4xl flex flex-col py-6">

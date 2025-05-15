@@ -14,7 +14,7 @@ const groups = [
 
 const GroupCard = ({ name }) => {
   return (
-    <Link to={`/chatgrupal/`}>
+    <Link to={`/home2/`}>
       <div className="bg-gray-800 p-4 rounded-lg cursor-pointer transition-opacity hover:opacity-75 active:opacity-50">
         <img className="w-20 h-20 mx-auto" src={groupImage} alt="Imagen del grupo" />
         <h2 className="text-xl font-bold text-center mb-3">{name}</h2>
@@ -84,7 +84,7 @@ const Grupos = () => {
     <div className="h-screen w-screen bg-gray-900 text-white relative overflow-x-hidden">
       <Header />
       <nav className="absolute right-3 top-3">
-        <Link to="/" className="text-yellow-400 hover:text-yellow-300 ">← Volver al Inicio</Link>
+        <Link to="/home2" className="text-yellow-400 hover:text-yellow-300 ">← Volver al Inicio</Link>
       </nav>
       <main className="py-3 relative">
         <h1 className="text-center mb-6">Mis grupos</h1>

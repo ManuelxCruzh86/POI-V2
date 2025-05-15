@@ -82,50 +82,151 @@ function Home() {
                 </div>
             </nav>
 
-            <main className="flex-1 flex flex-col items-center justify-center py-10 bg-gray-900">
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-6 w-full max-w-5xl">
-                    <Link to="/chat/1" className="bg-gray-800 p-6 rounded-xl flex flex-col items-center shadow-lg hover:bg-gray-700 transition w-full">
-                        <span className="text-5xl">💬</span>
-                        <p className="font-semibold mt-2 text-xl">Chat Privado</p>
-                        <p className="text-sm opacity-75">Mensajes individuales y cifrado opcional.</p>
-                    </Link>
+                <main className="flex-1 flex flex-col items-center justify-center py-10 bg-gray-900">
+                {!user && (
+                    <div className="max-w-4xl mx-auto text-center">
+                        <h1 className="text-5xl font-bold mb-6 bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent">
+                            Bienvenido a ConneXXo
+                        </h1>
+                        <p className="text-xl text-gray-300 mb-8">
+                            Haz llamadas, chatea con quien quieras y accede a tus archivos de forma segura
+                        </p>
+                        
+                        <div className="text-center">
+                            <p className="text-gray-300 text-lg max-w-2xl mx-auto mb-8">
+                                Conecta con tu comunidad, comparte experiencias y descubre nuevas oportunidades.
+                            </p>
+                            <Link
+                                to="/login"
+                                className="bg-yellow-400 hover:bg-yellow-600 text-gray-900 px-8 py-3 rounded-lg font-semibold text-lg shadow-lg hover:scale-105 transition"
+                            >
+                                Únete Ahora
+                            </Link>
+                        </div>
+                        
+                        <div className="h-8"></div>
+                        <div className="h-8"></div>
 
-                    <Link to="/chatgrupal" className="bg-gray-800 p-6 rounded-xl flex flex-col items-center shadow-lg hover:bg-gray-700 transition w-full">
-                        <span className="text-5xl">🗨️</span>
-                        <p className="font-semibold mt-2 text-xl">Chat Grupal</p>
-                        <p className="text-sm opacity-75">Comunicación en tiempo real con grupos.</p>
-                    </Link>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                            {[
+                                { 
+                                    title: "Reuniones seguras",
+                                    icon: "📅",
+                                    description: "Video llamadas encriptadas con calidad HD"
+                                },
+                                { 
+                                    title: "Chat integrado",
+                                    icon: "💬",
+                                    description: "Mensajería instantánea con historial ilimitado"
+                                },
+                                { 
+                                    title: "Archivos en la nube",
+                                    icon: "☁️",
+                                    description: "Almacenamiento seguro con acceso desde cualquier dispositivo"
+                                }
+                            ].map((feature, index) => (
+                                <div key={index} className="bg-gray-800 p-6 rounded-xl hover:bg-gray-700 transition-colors">
+                                    <div className="text-4xl mb-4">{feature.icon}</div>
+                                    <h3 className="text-xl font-semibold mb-2">{feature.title}</h3>
+                                    <p className="text-gray-400">{feature.description}</p>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
 
-                    <Link to="/videollamada" className="bg-gray-800 p-6 rounded-xl flex flex-col items-center shadow-lg hover:bg-gray-700 transition w-full">
-                        <span className="text-5xl">📹</span>
-                        <p className="font-semibold mt-2 text-xl">Videollamadas</p>
-                        <p className="text-sm opacity-75">Comunicación 1 a 1 en video.</p>
-                    </Link>
+                {user?.nombre && (
+    <div className="w-full max-w-7xl px-4">
+        <div className="text-center mb-16 animate-fade-in">
+            <h1 className="text-5xl font-bold bg-gradient-to-r from-yellow-400 via-purple-400 to-purple-600 bg-clip-text text-transparent mb-6">
+                ¡Bienvenido de vuelta, {user.nombre}! 
+            </h1>
+            <p className="text-xl text-gray-300 font-light">
+                Es un placer tenerte aquí. Explora las nuevas funciones y mantente conectado con tu comunidad.
+            </p>
+        </div>
 
-                    <Link to="/tareas" className="bg-gray-800 p-6 rounded-xl flex flex-col items-center shadow-lg hover:bg-gray-700 transition w-full">
-                        <span className="text-5xl">📋</span>
-                        <p className="font-semibold mt-2 text-xl">Tareas</p>
-                        <p className="text-sm opacity-75">Asigna y completa tareas en equipo.</p>
-                    </Link>
-
-                    <Link to="/recompensas" className="bg-gray-800 p-6 rounded-xl flex flex-col items-center shadow-lg hover:bg-gray-700 transition w-full">
-                        <span className="text-5xl">🏆</span>
-                        <p className="font-semibold mt-2 text-xl">Recompensas</p>
-                        <p className="text-sm opacity-75">Gana puntos y canjea premios.</p>
-                    </Link>
-
-                    <Link to="/usuarios" className="bg-gray-800 p-6 rounded-xl flex flex-col items-center shadow-lg hover:bg-gray-700 transition w-full">
-                        <span className="text-5xl">🟢</span>
-                        <p className="font-semibold mt-2 text-xl">Estado de Usuarios</p>
-                        <p className="text-sm opacity-75">Ver quién está en línea en tiempo real.</p>
-                    </Link>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-16">
+            <div className="bg-gradient-to-br from-gray-800 to-gray-900 p-6 rounded-2xl border border-gray-700 hover:border-yellow-400 transition-all duration-300 group">
+                <div className="flex items-center gap-4 mb-4">
+                    <div className="p-3 bg-yellow-400/20 rounded-xl">
+                        <span className="text-2xl">📈</span>
+                    </div>
+                    <h3 className="text-xl font-semibold">Actividad</h3>
                 </div>
-
-                <div className="mt-12">
-                    <Link to="/grupos" className="bg-yellow-400 hover:bg-yellow-600 text-gray-900 px-8 py-4 rounded-full font-semibold text-xl shadow-lg hover:scale-105 transition">
-                        Mis Grupos👨‍👩‍👧‍👦
-                    </Link>
+                <div className="space-y-3">
+                    <div className="flex justify-between items-center">
+                        <span className="text-gray-400">Grupos</span>
+                        <span className="text-yellow-400 font-bold">Nuevo</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                        <span className="text-gray-400">Mensajes</span>
+                        <span className="text-purple-400 font-bold">Nuevo</span>
+                    </div>
                 </div>
+            </div>
+
+            <div className="bg-gradient-to-br from-gray-800 to-gray-900 p-6 rounded-2xl border border-gray-700 hover:border-purple-400 transition-all duration-300">
+                <div className="flex items-center gap-4 mb-4">
+                    <div className="p-3 bg-purple-400/20 rounded-xl">
+                        <span className="text-2xl">🔔</span>
+                    </div>
+                    <h3 className="text-xl font-semibold">Alertas</h3>
+                </div>
+                <ul className="space-y-3">
+                    <li className="flex items-center gap-3 text-sm text-gray-300">
+                        <div className="h-2 w-2 bg-yellow-400 rounded-full animate-pulse"></div>
+                        Mensajes Ilimitados
+                    </li>
+                    <li className="flex items-center gap-3 text-sm text-gray-300">
+                        <div className="h-2 w-2 bg-green-400 rounded-full"></div>
+                        Tareas Intuitivas
+                    </li>
+                </ul>
+            </div>
+
+            <div className="md:col-span-2 bg-gradient-to-br from-gray-800 to-gray-900 p-6 rounded-2xl border border-gray-700 hover:border-blue-400 transition-all duration-300">
+                <div className="flex items-center gap-4 mb-6">
+                    <div className="p-3 bg-blue-400/20 rounded-xl">
+                        <span className="text-2xl">⚡</span>
+                    </div>
+                    <h3 className="text-xl font-semibold">Acciones Instantáneas</h3>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <button className="flex items-center gap-3 p-4 bg-gray-700/50 hover:bg-gray-600 rounded-xl transition-colors">
+                     <span className="text-2xl">👥</span>
+                        <div className="text-left">
+                            <p className="font-medium">Grupos</p>
+                            <Link
+                                to="/grupos" >
+                                Mis Grupos
+                            </Link>
+                        </div>
+                    </button>
+                    <button className="flex items-center gap-3 p-4 bg-gray-700/50 hover:bg-gray-600 rounded-xl transition-colors">
+                        <span className="text-2xl">📤</span>
+                        <div className="text-left">
+                            <p className="font-medium">Perfil</p>
+                            <Link
+                                to="/perfil" >
+                                Mi Perfil
+                            </Link>
+                        </div>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+<div className="w-full flex justify-center mt-12">
+            <Link
+                to="/grupos"
+                className="bg-yellow-400 hover:bg-yellow-600 text-gray-900 px-8 py-4 rounded-full font-semibold text-xl shadow-lg hover:scale-105 transition"
+            >
+                Mis Grupos👨‍👩‍👧‍👦
+            </Link>
+        </div>
+    </div>
+)}
             </main>
 
             <footer className="p-4 text-center text-sm opacity-70 bg-gray-800">

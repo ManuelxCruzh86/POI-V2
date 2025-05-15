@@ -69,7 +69,7 @@ const ChatGrupal = () => {
             ))}
           </ul>
         </div>
-        <Link to="/" className="text-blue-400 hover:underline mt-4">
+        <Link to="/home2" className="text-blue-400 hover:underline mt-4">
           ← Volver al inicio
         </Link>
       </aside>

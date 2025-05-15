@@ -10,6 +10,7 @@ import Videollamada2 from "./pages/Videollamada2";
 import ChatGrupal from "./pages/Chatgrupal";
 import Login from "./pages/Login";
 import Grupos from "./pages/Grupos";
+import Home2 from "./pages/Home2";
 
 
 function App() {
@@ -17,6 +18,7 @@ function App() {
       <div className="h-screen w-screen">
         <Routes>
           <Route path="/" element={<Home />} />
+          <Route path="/home2" element={<Home2 />} />
           <Route path="/chat/:receiverId" element={<Chat />} />
           <Route path="/videollamada" element={<Videollamada />} />
           <Route path="/tareas" element={<Tareas />} />

@@ -23,7 +23,7 @@ const VideoCall = () => {
 
   const finalizarLlamada = () => {
     setCallStatus("Finalizado");
-    navigate("/"); // Redirigir al inicio
+    navigate("/home2"); // Redirigir al inicio
   };
 
   return (

@@ -27,7 +27,7 @@ const Tareas = () => {
                     <img src="/conexxo.png" className="h-24 w-24 object-contain" alt="Logo" />
                     <h1 className="text-3xl font-bold">ConneXXo</h1>
                 </div>
-            <Link to="/" className="text-yellow-400 hover:text-yellow-300">← Volver al Inicio</Link>
+            <Link to="/home2" className="text-yellow-400 hover:text-yellow-300">← Volver al Inicio</Link>
         </nav>
 
       <div className="max-w-xl w-full p-6 bg-gray-800 shadow-lg rounded-xl">

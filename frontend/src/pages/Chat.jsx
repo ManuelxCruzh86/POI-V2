@@ -101,7 +101,7 @@ function ChatIndividual() {
     <div className="h-full w-full flex bg-gray-900 text-white">
       
         <aside className="w-64 bg-gray-800 p-4 shadow-lg">
-          <Link to="/" className="text-blue-400 hover:underline mt-4">
+          <Link to="/home2" className="text-blue-400 hover:underline mt-4">
             ← Volver al inicio
           </Link>
           <h2 className="text-xl font-bold mb-4 mt-9">Usuarios Conectados</h2>
