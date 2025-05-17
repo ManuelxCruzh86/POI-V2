@@ -15,12 +15,23 @@ function Home() {
         }
     }, []);
 
-    const handleLogout = () => {
-        localStorage.removeItem("token");
-        localStorage.removeItem("user");
-        setUser(null);
-        navigate("/login");
-    };
+    const handleLogout = async () => {
+    const user = JSON.parse(localStorage.getItem("user"));
+
+    if (user) {
+        try {
+            await fetch(`http://localhost:3001/auth/usuarios/${user.id}/desconectar`, {
+                method: "PUT"
+            });
+        } catch (error) {
+            console.error("Error al desconectar usuario:", error);
+        }
+    }
+
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+    navigate("/login");
+};
 
     const handleProfile = () => {
         navigate("/perfil");

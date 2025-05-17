@@ -1,4 +1,5 @@
 import { Routes, Route, Link } from "react-router-dom";
+import { useEffect } from "react";
 import Home from "./pages/Home";
 import Chat from "./pages/Chat";
 import Videollamada from "./pages/Videollamada";
@@ -14,6 +15,21 @@ import Home2 from "./pages/Home2";
 
 
 function App() {
+  useEffect(() => {
+        const handleBeforeUnload = () => {
+            const user = JSON.parse(localStorage.getItem("user"));
+            if (user) {
+                navigator.sendBeacon(`http://localhost:3001/auth/usuarios/${user.id}/desconectar`);
+            }
+        };
+
+        window.addEventListener("beforeunload", handleBeforeUnload);
+
+        return () => {
+            window.removeEventListener("beforeunload", handleBeforeUnload);
+        };
+    }, []);
+
   return (
       <div className="h-screen w-screen">
         <Routes>

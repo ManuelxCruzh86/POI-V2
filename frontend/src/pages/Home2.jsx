@@ -1,11 +1,27 @@
 import { useState, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 
 function Home() {
     const [user, setUser] = useState(null);
     const navigate = useNavigate();
     const userId = localStorage.getItem("userId");
     console.log("ID del usuario:", userId);
+  
+
+   useEffect(() => {
+        const idGrupo = localStorage.getItem('tempGroupId');
+        const grupoData = localStorage.getItem('tempGroupData');
+        
+        if (!idGrupo) {
+            navigate('/grupos');
+            return;
+        }
+        
+        console.log("ID del grupo:", idGrupo);  
+        //localStorage.removeItem('tempGroupId');
+        //localStorage.removeItem('tempGroupData');
+
+    }, [navigate]);
 
 
     useEffect(() => {
@@ -15,12 +31,24 @@ function Home() {
         }
     }, []);
 
-    const handleLogout = () => {
-        localStorage.removeItem("token");
-        localStorage.removeItem("user");
-        setUser(null);
-        navigate("/login");
-    };
+   const handleLogout = async () => {
+    const user = JSON.parse(localStorage.getItem("user"));
+
+    if (user) {
+        try {
+            await fetch(`http://localhost:3001/auth/usuarios/${user.id}/desconectar`, {
+                method: "PUT"
+            });
+        } catch (error) {
+            console.error("Error al desconectar usuario:", error);
+        }
+    }
+
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+    navigate("/login");
+};
+
 
     const handleProfile = () => {
         navigate("/perfil");

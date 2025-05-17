@@ -4,7 +4,7 @@ import { Link } from "react-router-dom";
 import { io } from "socket.io-client";
 import { LiMensaje, UlMensajes } from './ui-components';
 
-const socket = io("http://localhost:3001");
+const socket = io("http://192.168.0.231:3001");
 
 const ChatGrupal = () => {
   const [nuevoMensaje, setNuevoMensaje] = useState("");

@@ -10,11 +10,12 @@ export default function Usuarios() {
   const [users, setUsers] = useState([]);
 
   useEffect(() => {
+    const idGrupo = localStorage.getItem('tempGroupId');
     const cargarUsuarios = async () => {
       try {
-        const response = await fetch("http://localhost:3001/api/usuarios");
+        const response = await fetch(`http://localhost:3001/auth/grupos/${idGrupo}/miembros`);
         const data = await response.json();
-        setUsers(data);
+        setUsers(data.miembros);
       } catch (error) {
         console.error("Error cargando usuarios:", error);
       }

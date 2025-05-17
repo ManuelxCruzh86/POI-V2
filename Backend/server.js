@@ -8,6 +8,9 @@ const authRoutes = require("./routes/auth");
 const db = require("./db");
 const jwt = require("jsonwebtoken");
 const SECRET_KEY = "tu_clave_secreta";
+const multer = require('multer');
+const path = require('path');
+const fs = require('fs');
 
 const app = express();
 const server = http.createServer(app);
@@ -18,7 +21,7 @@ const server = http.createServer(app);
 
 const io = socketIo(server, {
     cors: {
-        origin: "http://localhost:5173", 
+        origin: "*", 
         methods: ["GET", "POST"],
         credentials: true
         
@@ -60,13 +63,14 @@ const obtenerUsuariosConectados = async () => {
 };
 
 app.use(cors({
-    origin: "http://localhost:5173",
+    origin: "*",
     credentials: true
 }));
 app.use(express.json());
 
 // Rutas
 app.use("/auth", authRoutes);
+app.use('/Imagenes', express.static(path.join(__dirname, 'Imagenes')));
 
 app.use((req, res) => {
     res.status(404).json({ 
@@ -76,7 +80,7 @@ app.use((req, res) => {
 });
 
 
-server.listen(3001, () => {
+server.listen(3001, '0.0.0.0', () => {
     console.log("Servidor corriendo en el puerto 3001");
 });
 
