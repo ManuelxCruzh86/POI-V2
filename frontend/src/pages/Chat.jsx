@@ -3,6 +3,8 @@ import { FaMicrophone, FaMicrophoneSlash, FaVideo, FaVideoSlash, FaPhoneSlash, F
 import clipIcon from '../assets/adjunto.png';
 import { Link } from "react-router-dom";
 
+import { useMembers } from "../hooks/useMembers";
+
 function ChatIndividual() {
   const [showNotifications, setShowNotifications] = useState(false);
   const [showRewards, setShowRewards] = useState(false);
@@ -17,6 +19,10 @@ function ChatIndividual() {
   const [nombreUser, setNombreUser] = useState("");
   const videoRef = useRef(null);
 
+  const groupId = localStorage.getItem("tempGroupId");
+  const [usuarios, setUsuarios] = useMembers(groupId);
+
+  const idLogged = Number(localStorage.getItem("userId"));
 
   useEffect(() => {
     if (showPreview) {
@@ -34,12 +40,6 @@ function ChatIndividual() {
   }, [isMicOn, isVideoOn, showPreview]);
 
 
-  const [usuarios, setUsuarios] = useState([
-    { id: 1, nombre: "Juan", estado: "", activo: 1 },
-    { id: 2, nombre: "Ana", estado: "", activo: 0 },
-    { id: 3, nombre: "Carlos", estado: "", activo: 0 },
-    { id: 4, nombre: "María", estado: "", activo: 0 },
-  ]);
 
   useEffect(() => {
     const usuarioActivo = usuarios.find((usuario) => usuario.activo === 1);
@@ -106,8 +106,10 @@ function ChatIndividual() {
           </Link>
           <h2 className="text-xl font-bold mb-4 mt-9">Usuarios Conectados</h2>
             <ul className="space-y-2">
-            {usuarios.map((usuario) => (
-              <li
+            {usuarios.map((usuario) => {
+              if (usuario.id === idLogged) return
+
+              return <li
                 key={usuario.id}
                 className={`flex items-center space-x-2 p-2 rounded-lg cursor-pointer ${
                   1 === usuario.activo ? 'bg-blue-500 text-white' : 'bg-gray-700 text-gray-300'
@@ -117,7 +119,7 @@ function ChatIndividual() {
                 <span>{usuario.estado}</span>
                 <span>{usuario.nombre}</span>
               </li>
-            ))}
+            })}
           </ul>
         </aside>
 
@@ -215,15 +217,15 @@ function ChatIndividual() {
       
       
         {isOpen && (
-        <div class="relative z-10" aria-labelledby="modal-title" role="dialog" aria-modal="true">
-          <div class="fixed inset-0 bg-gray-900/75 transition-opacity" aria-hidden="true"></div>
-              <div class="fixed inset-0 z-10 w-screen overflow-y-auto">
-                <div class="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
+        <div className="relative z-10" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+          <div className="fixed inset-0 bg-gray-900/75 transition-opacity" aria-hidden="true"></div>
+              <div className="fixed inset-0 z-10 w-screen overflow-y-auto">
+                <div className="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
                   
-                  <div class="relative transform overflow-hidden rounded-lg bg-black text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg">
-                    <div class="bg-gray-700 px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                  <div className="relative transform overflow-hidden rounded-lg bg-black text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg">
+                    <div className="bg-gray-700 px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
                       
-                      <div class="sm:flex sm:items-start">
+                      <div className="sm:flex sm:items-start">
         
                       <div className="w-full max-w-2xl bg-gray-800 rounded-lg shadow-lg p-6">
                           <h2 className="text-2xl font-semibold text-white mb-4">Videollamada Privada</h2>
