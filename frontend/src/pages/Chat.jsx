@@ -23,9 +23,7 @@ function ChatIndividual() {
   const [isOpen, setIsOpen] = useState(false);
   const [isMicOn, setIsMicOn] = useState(true);
   const [isVideoOn, setIsVideoOn] = useState(true);
-  const [showPreview, setShowPreview] = useState(true);
   const [nombreUser, setNombreUser] = useState("");
-  const videoRef = useRef(null);
 
   const groupId = localStorage.getItem("tempGroupId");
   const [usuarios, setUsuarios] = useMembers(groupId);
@@ -39,24 +37,6 @@ function ChatIndividual() {
     isMicOn,
     isVideoOn
   );
-
-  useEffect(() => {
-    if (showPreview) {
-      navigator.mediaDevices
-        ?.getUserMedia({ video: isVideoOn, audio: isMicOn })
-        .then((stream) => {
-          if (videoRef.current) {
-            videoRef.current.srcObject = stream;
-          }
-        })
-        .catch((error) => {
-          console.error(
-            "Error al acceder a los dispositivos multimedia:",
-            error
-          );
-        });
-    }
-  }, [isMicOn, isVideoOn, showPreview]);
 
   useEffect(() => {
     const usuarioActivo = usuarios.find((usuario) => usuario.activo === 1);
@@ -81,13 +61,11 @@ function ChatIndividual() {
   const openModal = () => {
     setIsOpen(true);
     setCallOn(true);
-    setShowPreview(true);
   };
 
   const closeModal = () => {
     setIsOpen(false);
     setCallOn(false);
-    setShowPreview(false);
   };
 
   const manejarClick = (usuarioId) => {
@@ -281,7 +259,7 @@ function ChatIndividual() {
                       <div className="bg-gray-700 rounded-lg overflow-hidden mb-4">
                         {isVideoOn ? (
                           <video
-                            ref={videoRef}
+                            ref={localVideoRef}
                             autoPlay
                             muted
                             className="w-full h-48 object-cover"
