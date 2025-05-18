@@ -4,6 +4,7 @@ import clipIcon from '../assets/adjunto.png';
 import { Link } from "react-router-dom";
 
 import { useMembers } from "../hooks/useMembers";
+import { use2PeerCall } from "../hooks/use2PeerCall";
 
 function ChatIndividual() {
   const [showNotifications, setShowNotifications] = useState(false);
@@ -24,10 +25,13 @@ function ChatIndividual() {
 
   const idLogged = Number(localStorage.getItem("userId"));
 
+  const [callOn, setCallOn] = useState(false);
+  const { localVideoRef, partnerStream } = use2PeerCall(groupId, callOn, isMicOn, isVideoOn);
+
   useEffect(() => {
     if (showPreview) {
       navigator.mediaDevices
-        .getUserMedia({ video: isVideoOn, audio: isMicOn })
+        ?.getUserMedia({ video: isVideoOn, audio: isMicOn })
         .then((stream) => {
           if (videoRef.current) {
             videoRef.current.srcObject = stream;
@@ -59,16 +63,18 @@ function ChatIndividual() {
     }
   };
 
-   const openModal = () => {
-     setIsOpen(true);
-     setShowPreview(true);
-   };
+  const openModal = () => {
+    setIsOpen(true);
+    setCallOn(true);
+    setShowPreview(true);
+  };
  
 
-   const closeModal = () => {
-     setIsOpen(false);
-     setShowPreview(false); 
-   };
+  const closeModal = () => {
+    setIsOpen(false);
+    setCallOn(false);
+    setShowPreview(false); 
+  };
   
    const manejarClick = (usuarioId) => {
     const usuariosActualizados = usuarios.map((usuario) => {
@@ -241,7 +247,18 @@ function ChatIndividual() {
 
                                   <div className="bg-gray-700 rounded-lg overflow-hidden mb-4">
                                       <div className="w-full h-48 bg-gray-700 rounded-lg flex items-center justify-center">
-                                        <p className="text-white font-bold">Video de Juan</p>
+                                        {partnerStream ? (
+                                          <video
+                                            className="w-full h-48 object-cover"
+                                            autoPlay
+                                            playsInline
+                                            ref={el => {
+                                              if (el && partnerStream) el.srcObject = partnerStream;
+                                            }}
+                                          />
+                                        ) : (
+                                          <p className="text-white font-bold">Esperando a otro usuario...</p>
+                                        )}
                                       </div>
                                   </div>
 

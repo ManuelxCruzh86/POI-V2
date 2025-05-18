@@ -46,6 +46,31 @@ io.on('connection', (socket) => {
             mensaje: data.mensaje
         });
     });
+
+    socket.on('join_room', roomId => {
+        const room = io.sockets.adapter.rooms.get(roomId) || new Set();
+
+        if (room.size < 2) {
+            socket.join(roomId);
+
+            if (room.size === 1) {
+                io.to(roomId).emit('ready');
+            }
+        } else {
+            socket.emit('room_full');
+        }
+    })
+
+    // Reenvía cualquier señal al otro peer
+    socket.on('signal', ({ roomID, data }) => {
+        socket.to(roomID).emit('signal', data);
+    });
+
+    socket.on('disconnecting', () => {
+        socket.rooms.forEach(roomID => {
+            socket.to(roomID).emit('peer_disconnected');
+        });
+    });
 });
 
 
