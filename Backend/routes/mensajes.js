@@ -1,6 +1,51 @@
 const express = require("express");
 const router = express.Router();
-const db = require("../db");
+const db = require("../db").promise();
+
+router.post("/privado", async (req, res) => {
+  const { remitente_id, destinatario_id, contenido, es_cifrado, tipo } = req.body;
+
+  try {
+    await db.query(
+      "INSERT INTO mensajes (remitente_id, destinatario_id, contenido, es_cifrado, tipo) VALUES (?, ?, ?, ?, ?)",
+      [remitente_id, destinatario_id, contenido, es_cifrado, tipo]
+    );
+
+    // ✅ usa req.io aquí (¡aquí sí existe!)
+    req.io.to(destinatario_id.toString()).emit("nuevo_mensaje", {
+      remitente_id,
+      contenido,
+      es_cifrado,
+      tipo,
+      fecha: new Date()
+    });
+
+    res.status(200).json({ success: true });
+  } catch (err) {
+    console.error("Error al guardar mensaje:", err.message);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+router.get("/conversacion", async (req, res) => {
+  const { usuario1, usuario2 } = req.query;
+
+  try {
+    const [rows] = await db.promise().query(`
+      SELECT * FROM mensajes 
+      WHERE (remitente_id = ? AND destinatario_id = ?) 
+         OR (remitente_id = ? AND destinatario_id = ?) 
+      ORDER BY fecha ASC
+    `, [usuario1, usuario2, usuario2, usuario1]);
+
+    res.json({ success: true, mensajes: rows });
+  } catch (error) {
+    console.error("Error al obtener mensajes:", error);
+    res.status(500).json({ success: false });
+  }
+});
+
+
 
 router.post("/enviar", (req, res) => {
     const { contenido, remitente_id, destinatario_id, grupo_id, tipo } = req.body;

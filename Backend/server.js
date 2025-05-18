@@ -14,6 +14,8 @@ const fs = require('fs');
 
 const app = express();
 const server = http.createServer(app);
+const mensajesRouter = require("./routes/mensajes");
+
 
 /* const io= require('socket.io')(server,{
     cors:{origin: '*'}
@@ -68,17 +70,23 @@ app.use(cors({
 }));
 app.use(express.json());
 
-// Rutas
-app.use("/auth", authRoutes);
-app.use('/Imagenes', express.static(path.join(__dirname, 'Imagenes')));
-
-app.use((req, res) => {
-    res.status(404).json({ 
-        error: "Ruta no encontrada",
-        mensaje: "La URL solicitada no existe en este servidor"
-    });
+// Inyectar io primero
+app.use((req, res, next) => {
+  req.io = io;
+  next();
 });
 
+// Rutas válidas
+app.use("/auth", authRoutes);
+app.use("/mensajes", mensajesRouter);
+app.use('/Imagenes', express.static(path.join(__dirname, 'Imagenes')));
+
+// Siempre el 404 debe ser el ÚLTIMO
+app.use((req, res) => {
+  res.status(404).json({ 
+    error: "Ruta no encontrada"
+  });
+});
 
 server.listen(3001, '0.0.0.0', () => {
     console.log("Servidor corriendo en el puerto 3001");

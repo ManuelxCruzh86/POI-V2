@@ -12,4 +12,4 @@ taskkill /PID TUPID /F - taskkill /PID 19580 /F
 
 y ya accede al Backend y node server.js
 
-
+Ctrl+ c en la consola del backend = Cierras el Backend

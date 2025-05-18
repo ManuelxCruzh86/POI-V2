@@ -2,6 +2,8 @@ import React, { useState, useRef, useEffect } from "react";
 import { FaMicrophone, FaMicrophoneSlash, FaVideo, FaVideoSlash, FaPhoneSlash, FaUser } from "react-icons/fa";
 import clipIcon from '../assets/adjunto.png';
 import { Link } from "react-router-dom";
+import { io } from "socket.io-client";
+
 
 function ChatIndividual() {
   const [showNotifications, setShowNotifications] = useState(false);
@@ -16,6 +18,9 @@ function ChatIndividual() {
   const [showPreview, setShowPreview] = useState(true);
   const [nombreUser, setNombreUser] = useState("");
   const videoRef = useRef(null);
+  const [selectedUserId, setSelectedUserId] = useState(null);
+  const mensajesEndRef = useRef(null);
+
 
 
   useEffect(() => {
@@ -34,30 +39,69 @@ function ChatIndividual() {
   }, [isMicOn, isVideoOn, showPreview]);
 
 
-  const [usuarios, setUsuarios] = useState([
-    { id: 1, nombre: "Juan", estado: "", activo: 1 },
-    { id: 2, nombre: "Ana", estado: "", activo: 0 },
-    { id: 3, nombre: "Carlos", estado: "", activo: 0 },
-    { id: 4, nombre: "María", estado: "", activo: 0 },
-  ]);
+  const [usuarios, setUsuarios] = useState([]);
+
+  const socket = io("http://localhost:3001", {
+  auth: { token: localStorage.getItem("token") }
+});
+
+useEffect(() => {
+  const interval = setInterval(() => {
+    if (selectedUserId) manejarClick(selectedUserId);
+  }, 5000); 
+  return () => clearInterval(interval);
+}, [selectedUserId]);
+
+
+useEffect(() => {
+  socket.on("usuarios_actualizados", (usuariosActualizados) => {
+    setUsuarios(usuariosActualizados);
+  });
+
+  return () => {
+    socket.off("usuarios_actualizados");
+  };
+}, []);
 
   useEffect(() => {
-    const usuarioActivo = usuarios.find((usuario) => usuario.activo === 1);
-    if (usuarioActivo) {
-      setNombreUser(usuarioActivo.nombre);
-    }
-  }, [usuarios]);
+  const idGrupo = localStorage.getItem("tempGroupId");
 
-
-  const enviarMensaje = (e) => {
-    e.preventDefault();
-    if (mensaje.trim() || archivo) {
-      const archivoUrl = archivo ? URL.createObjectURL(archivo) : null;
-      setMensajes([...mensajes, { id: mensajes.length + 1, texto: mensaje, archivo: archivoUrl }]);
-      setMensaje("");
-      setArchivo(null);
+  const cargarUsuarios = async () => {
+    try {
+      const response = await fetch(`http://localhost:3001/auth/grupos/${idGrupo}/miembros`);
+      const data = await response.json();
+      setUsuarios(data.miembros);
+    } catch (error) {
+      console.error("Error al cargar usuarios del grupo:", error);
     }
   };
+  cargarUsuarios();
+}, []);
+
+
+
+useEffect(() => {
+  socket.on("nuevo_mensaje", (mensajeRecibido) => {
+    if (mensajeRecibido.remitente_id === selectedUserId) {
+      setMensajes((prev) => [...prev, {
+        id: prev.length + 1,
+        texto: mensajeRecibido.contenido,
+        archivo: null, // Si es un archivo deberás obtener su URL
+      }]);
+    }
+  });
+
+  return () => {
+    socket.off("nuevo_mensaje");
+  };
+}, [selectedUserId]);
+
+  const scrollToBottom = () => {
+  if (mensajesEndRef.current) {
+    mensajesEndRef.current.scrollIntoView({ behavior: "smooth" });
+  }
+};
+
 
    const openModal = () => {
      setIsOpen(true);
@@ -70,18 +114,25 @@ function ChatIndividual() {
      setShowPreview(false); 
    };
   
-   const manejarClick = (usuarioId) => {
-    const usuariosActualizados = usuarios.map((usuario) => {
-      return {
-        ...usuario,
-        activo: usuario.id === usuarioId ? 1 : 0, 
-      };
-    });
-    setUsuarios(usuariosActualizados);
+   const manejarClick = async (usuarioId) => {
+  setSelectedUserId(usuarioId);
+  const usuario = usuarios.find((u) => u.id === usuarioId);
+  setNombreUser(usuario?.nombre || "");
 
-    const usuarioActivo = usuarios.find((usuario) => usuario.id === usuarioId);
-    setNombreUser(usuarioActivo ? usuarioActivo.nombre : "");
-  };
+  const remitenteId = localStorage.getItem("userId");
+
+  try {
+    const res = await fetch(`http://localhost:3001/mensajes/conversacion?usuario1=${remitenteId}&usuario2=${usuarioId}`);
+    const data = await res.json();
+    console.log("Mensajes recibidos del backend:", data.mensajes);
+    if (data.success) {
+      setMensajes(data.mensajes);
+    }
+  } catch (err) {
+    console.error("Error al cargar mensajes:", err);
+  }
+};
+
 
   const compartirUbicacion = () => {
     if (navigator.geolocation) {
@@ -94,6 +145,58 @@ function ChatIndividual() {
       alert("La geolocalización no está soportada en este navegador.");
     }
   };
+
+  const enviarMensaje = async (e) => {
+  e.preventDefault();
+  const remitenteId = localStorage.getItem("userId");
+
+  if ((!mensaje || mensaje.trim() === "") || !selectedUserId) return;
+
+  const payload = {
+    remitente_id: remitenteId,
+    destinatario_id: selectedUserId,
+    contenido: mensaje,
+    es_cifrado: cifrado ? 1 : 0,
+    tipo: "texto"
+  };
+
+  try {
+      const response = await fetch("http://localhost:3001/mensajes/privado", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(payload)
+    });
+
+    const result = await response.json();
+    if (result.success) {
+      const nuevoMensaje = {
+        id: mensajes.length + 1,
+        texto: mensaje,
+        archivo: null,
+      };
+      setMensajes([...mensajes, nuevoMensaje]);
+      setMensaje("");
+    } else {
+      alert("Error al enviar mensaje");
+    }
+  } catch (error) {
+    console.error("Error al enviar mensaje:", error);
+  }
+};
+
+useEffect(() => {
+  scrollToBottom();
+}, [mensajes]);
+
+
+
+
+
+
+
+
 
 
   return (
@@ -114,8 +217,12 @@ function ChatIndividual() {
                 }`}
                 onClick={() => manejarClick(usuario.id)}
               >
-                <span>{usuario.estado}</span>
-                <span>{usuario.nombre}</span>
+                <span
+                className={`w-3 h-3 rounded-full mr-2 ${
+                  usuario.conectado ? "bg-green-400" : "bg-red-400"
+                }`}
+              ></span>
+              <span>{usuario.nombre}</span>
               </li>
             ))}
           </ul>
@@ -136,28 +243,33 @@ function ChatIndividual() {
             </div>
           </div>
 
-          <div className="flex-none p-6 overflow-y-auto">
-            {mensajes.map((msg) => (
-              <div key={msg.id} className="mb-4">
-                <div className="bg-gray-700 p-4 rounded-lg max-w-md">
-                  <p>{cifrado ? "[Mensaje Cifrado]" : msg.texto}</p>
-
-                  {msg.archivo && (
-                    typeof msg.archivo === "string" ? (
-                      msg.archivo.endsWith(".png") || msg.archivo.endsWith(".jpg") || msg.archivo.endsWith(".jpeg") ? (
-                        <img src={msg.archivo} alt="Archivo adjunto" className="max-w-full h-auto" />
-                      ) : (
-                        <a href={msg.archivo} target="_blank" rel="noopener noreferrer" className="text-blue-400">Ver archivo</a>
-                      )
-                    ) : (
-                      <p>Archivo adjunto</p>
-                    )
-                  )}
-
+<div className="flex-1 p-6 overflow-y-auto mb-40">
+          {mensajes.map((msg) => (
+            <div key={msg.id} className="mb-4">
+              <div className="bg-gray-700 p-4 rounded-lg max-w-md">
+                <div className="text-xs text-gray-400 mb-1">
+                  <span className="font-semibold">{msg.remitente_id === parseInt(localStorage.getItem("userId")) ? 'Tú' : nombreUser}</span>
+                  {' • '}{new Date(msg.fecha).toLocaleString()}
                 </div>
+                <p>{cifrado ? "[Mensaje Cifrado]" : msg.contenido}</p>
+
+                {msg.archivo && (
+                  typeof msg.archivo === "string" ? (
+                    msg.archivo.endsWith(".png") || msg.archivo.endsWith(".jpg") || msg.archivo.endsWith(".jpeg") ? (
+                      <img src={msg.archivo} alt="Archivo adjunto" className="max-w-full h-auto" />
+                    ) : (
+                      <a href={msg.archivo} target="_blank" rel="noopener noreferrer" className="text-blue-400">Ver archivo</a>
+                    )
+                  ) : (
+                    <p>Archivo adjunto</p>
+                  )
+                )}
               </div>
-            ))}
-          </div>
+            </div>
+          ))}
+        </div>
+
+        <div ref={mensajesEndRef} />
 
 
           <form onSubmit={enviarMensaje} className="absolute inset-x-0 bottom-0 p-4 bg-gray-800 flex flex-col gap-2">
