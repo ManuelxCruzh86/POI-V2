@@ -20,8 +20,21 @@ function ChatIndividual() {
   const videoRef = useRef(null);
   const [selectedUserId, setSelectedUserId] = useState(null);
   const mensajesEndRef = useRef(null);
+  const [usuarios, setUsuarios] = useState([]);
 
+  const cifrarMensaje = (texto, desplazamiento = 3) => {
+    return texto.replace(/[a-zA-Z]/g, (char) => {
+      const base = char === char.toLowerCase() ? 97 : 65;
+      return String.fromCharCode(((char.charCodeAt(0) - base + desplazamiento) % 26) + base);
+    });
+  };
 
+  const descifrarMensaje = (texto, desplazamiento = 3) => {
+    return texto.replace(/[a-zA-Z]/g, (char) => {
+      const base = char === char.toLowerCase() ? 97 : 65;
+      return String.fromCharCode(((char.charCodeAt(0) - base - desplazamiento + 26) % 26) + base);
+    });
+  };
 
   useEffect(() => {
     if (showPreview) {
@@ -39,7 +52,6 @@ function ChatIndividual() {
   }, [isMicOn, isVideoOn, showPreview]);
 
 
-  const [usuarios, setUsuarios] = useState([]);
 
   const socket = io("http://localhost:3001", {
   auth: { token: localStorage.getItem("token") }
@@ -80,21 +92,27 @@ useEffect(() => {
 
 
 
-useEffect(() => {
-  socket.on("nuevo_mensaje", (mensajeRecibido) => {
-    if (mensajeRecibido.remitente_id === selectedUserId) {
-      setMensajes((prev) => [...prev, {
-        id: prev.length + 1,
-        texto: mensajeRecibido.contenido,
-        archivo: null, // Si es un archivo deberás obtener su URL
-      }]);
-    }
-  });
+ useEffect(() => {
+    socket.on("nuevo_mensaje", (mensajeRecibido) => {
+      if (mensajeRecibido.remitente_id === selectedUserId) {
+        const contenidoMostrado = mensajeRecibido.es_cifrado ? descifrarMensaje(mensajeRecibido.contenido) : mensajeRecibido.contenido;
+        setMensajes((prev) => [...prev, {
+          id: prev.length + 1,
+          texto: contenidoMostrado,
+          archivo: null,
+        }]);
+      }
+    });
 
-  return () => {
-    socket.off("nuevo_mensaje");
-  };
-}, [selectedUserId]);
+    return () => {
+      socket.off("nuevo_mensaje");
+    };
+  }, [selectedUserId]);
+
+
+useEffect(() => {
+  scrollToBottom();
+}, [mensajes]);
 
   const scrollToBottom = () => {
   if (mensajesEndRef.current) {
@@ -121,18 +139,20 @@ useEffect(() => {
 
   const remitenteId = localStorage.getItem("userId");
 
-  try {
-    const res = await fetch(`http://localhost:3001/mensajes/conversacion?usuario1=${remitenteId}&usuario2=${usuarioId}`);
-    const data = await res.json();
-    console.log("Mensajes recibidos del backend:", data.mensajes);
-    if (data.success) {
-      setMensajes(data.mensajes);
+   try {
+      const res = await fetch(`http://localhost:3001/mensajes/conversacion?usuario1=${remitenteId}&usuario2=${usuarioId}`);
+      const data = await res.json();
+      if (data.success) {
+        const mensajesDescifrados = data.mensajes.map(msg => ({
+          ...msg,
+          contenido: msg.es_cifrado ? descifrarMensaje(msg.contenido) : msg.contenido
+        }));
+        setMensajes(mensajesDescifrados);
+      }
+    } catch (err) {
+      console.error("Error al cargar mensajes:", err);
     }
-  } catch (err) {
-    console.error("Error al cargar mensajes:", err);
-  }
-};
-
+  };
 
   const compartirUbicacion = () => {
     if (navigator.geolocation) {
@@ -146,49 +166,51 @@ useEffect(() => {
     }
   };
 
+
+
   const enviarMensaje = async (e) => {
-  e.preventDefault();
-  const remitenteId = localStorage.getItem("userId");
+    e.preventDefault();
+    const remitenteId = localStorage.getItem("userId");
 
-  if ((!mensaje || mensaje.trim() === "") || !selectedUserId) return;
+    if ((!mensaje || mensaje.trim() === "") || !selectedUserId) return;
 
-  const payload = {
-    remitente_id: remitenteId,
-    destinatario_id: selectedUserId,
-    contenido: mensaje,
-    es_cifrado: cifrado ? 1 : 0,
-    tipo: "texto"
+    const contenidoFinal = cifrado ? cifrarMensaje(mensaje) : mensaje;
+
+    const payload = {
+      remitente_id: remitenteId,
+      destinatario_id: selectedUserId,
+      contenido: contenidoFinal,
+      es_cifrado: cifrado ? 1 : 0,
+      tipo: "texto"
+    };
+
+    try {
+      const response = await fetch("http://localhost:3001/mensajes/privado", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(payload)
+      });
+
+      const result = await response.json();
+      if (result.success) {
+        const nuevoMensaje = {
+          id: mensajes.length + 1,
+          texto: mensaje,
+          archivo: null,
+        };
+        setMensajes([...mensajes, nuevoMensaje]);
+        setMensaje("");
+      } else {
+        alert("Error al enviar mensaje");
+      }
+    } catch (error) {
+      console.error("Error al enviar mensaje:", error);
+    }
   };
 
-  try {
-      const response = await fetch("http://localhost:3001/mensajes/privado", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify(payload)
-    });
 
-    const result = await response.json();
-    if (result.success) {
-      const nuevoMensaje = {
-        id: mensajes.length + 1,
-        texto: mensaje,
-        archivo: null,
-      };
-      setMensajes([...mensajes, nuevoMensaje]);
-      setMensaje("");
-    } else {
-      alert("Error al enviar mensaje");
-    }
-  } catch (error) {
-    console.error("Error al enviar mensaje:", error);
-  }
-};
-
-useEffect(() => {
-  scrollToBottom();
-}, [mensajes]);
 
 
 
