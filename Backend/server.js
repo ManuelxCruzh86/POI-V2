@@ -48,18 +48,22 @@ io.on('connection', (socket) => {
     });
 
     socket.on('join_room', roomId => {
-        const room = io.sockets.adapter.rooms.get(roomId) || new Set();
+        const room = io.sockets.adapter.rooms.get(roomId);
+        const numClients = room ? room.size : 0;
 
-        if (room.size < 2) {
+        if (numClients < 2) {
             socket.join(roomId);
 
-            if (room.size === 1) {
-                io.to(roomId).emit('ready');
+            if (numClients === 1) {
+            // Sólo al que YA estaba en la sala:
+            socket.to(roomId).emit('ready');
             }
         } else {
             socket.emit('room_full');
         }
-    })
+    });
+
+
 
     // Reenvía cualquier señal al otro peer
     socket.on('signal', ({ roomID, data }) => {
