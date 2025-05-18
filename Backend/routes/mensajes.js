@@ -3,12 +3,12 @@ const router = express.Router();
 const db = require("../db").promise();
 
 router.post("/privado", async (req, res) => {
-  const { remitente_id, destinatario_id, contenido, es_cifrado, tipo } = req.body;
+  const { remitente_id, destinatario_id, contenido, es_cifrado, tipo, grupoId } = req.body;
 
   try {
     await db.query(
-      "INSERT INTO mensajes (remitente_id, destinatario_id, contenido, es_cifrado, tipo) VALUES (?, ?, ?, ?, ?)",
-      [remitente_id, destinatario_id, contenido, es_cifrado, tipo]
+      "INSERT INTO mensajes (remitente_id, destinatario_id, contenido, es_cifrado, tipo, grupo_id ) VALUES (?, ?, ?, ?, ?, ?)",
+      [remitente_id, destinatario_id, contenido, es_cifrado, tipo, grupoId ]
     );
 
     // ✅ usa req.io aquí (¡aquí sí existe!)
@@ -27,24 +27,37 @@ router.post("/privado", async (req, res) => {
   }
 });
 
-router.get("/conversacion", async (req, res) => {
-  const { usuario1, usuario2 } = req.query;
-
-  try {
-    const [rows] = await db.promise().query(`
-      SELECT * FROM mensajes 
-      WHERE (remitente_id = ? AND destinatario_id = ?) 
-         OR (remitente_id = ? AND destinatario_id = ?) 
-      ORDER BY fecha ASC
-    `, [usuario1, usuario2, usuario2, usuario1]);
-
-    res.json({ success: true, mensajes: rows });
-  } catch (error) {
-    console.error("Error al obtener mensajes:", error);
-    res.status(500).json({ success: false });
-  }
+router.get("/test-simple", (req, res) => {
+    console.log("Llegó a /test-simple");
+    res.json({ message: "GET básico funciona", data: [1, 2, 3] });
 });
 
+router.get("/conversacion", async (req, res) => {
+  try {
+    const { usuario1, usuario2, grupoId } = req.query;
+    
+    if (!usuario1 || !usuario2) {
+      return res.status(400).json({ error: "Se requieren usuario1 y usuario2" });
+    }
+
+    const [results] = await db.query(`
+      SELECT m.*, u.nombre as remitente_nombre 
+      FROM mensajes m
+      JOIN usuarios u ON m.remitente_id = u.id
+      WHERE ((m.remitente_id = ? AND m.destinatario_id = ?) 
+         OR (m.remitente_id = ? AND m.destinatario_id = ?))
+         ${grupoId ? 'AND m.grupo_id = ?' : 'AND m.grupo_id IS NULL'}
+      ORDER BY m.fecha ASC
+    `, grupoId 
+      ? [usuario1, usuario2, usuario2, usuario1, grupoId]
+      : [usuario1, usuario2, usuario2, usuario1]);
+
+    res.json(results);
+  } catch (error) {
+    console.error("Error en GET /conversacion:", error);
+    res.status(500).json({ error: error.message });
+  }
+});
 
 
 router.post("/enviar", (req, res) => {

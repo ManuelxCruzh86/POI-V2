@@ -4,7 +4,6 @@ import clipIcon from '../assets/adjunto.png';
 import { Link } from "react-router-dom";
 import { io } from "socket.io-client";
 
-
 function ChatIndividual() {
   const [showNotifications, setShowNotifications] = useState(false);
   const [showRewards, setShowRewards] = useState(false);
@@ -37,7 +36,7 @@ function ChatIndividual() {
   };
 
   useEffect(() => {
-    if (showPreview) {
+    if (showPreview && typeof navigator !== "undefined" && navigator.mediaDevices?.getUserMedia) {
       navigator.mediaDevices
         .getUserMedia({ video: isVideoOn, audio: isMicOn })
         .then((stream) => {
@@ -48,51 +47,50 @@ function ChatIndividual() {
         .catch((error) => {
           console.error("Error al acceder a los dispositivos multimedia:", error);
         });
+    } else if (showPreview) {
+      console.error("getUserMedia no está soportado en este navegador.");
     }
   }, [isMicOn, isVideoOn, showPreview]);
 
-
-
   const socket = io("http://localhost:3001", {
-  auth: { token: localStorage.getItem("token") }
-});
-
-useEffect(() => {
-  const interval = setInterval(() => {
-    if (selectedUserId) manejarClick(selectedUserId);
-  }, 5000); 
-  return () => clearInterval(interval);
-}, [selectedUserId]);
-
-
-useEffect(() => {
-  socket.on("usuarios_actualizados", (usuariosActualizados) => {
-    setUsuarios(usuariosActualizados);
+    auth: { token: localStorage.getItem("token") }
   });
 
-  return () => {
-    socket.off("usuarios_actualizados");
-  };
-}, []);
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (selectedUserId) manejarClick(selectedUserId);
+    }, 5000);
+    return () => clearInterval(interval);
+  }, [selectedUserId]);
 
   useEffect(() => {
-  const idGrupo = localStorage.getItem("tempGroupId");
+    socket.on("usuarios_actualizados", (usuariosActualizados) => {
+      setUsuarios(usuariosActualizados);
+    });
+    return () => {
+      socket.off("usuarios_actualizados");
+    };
+  }, []);
 
-  const cargarUsuarios = async () => {
-    try {
-      const response = await fetch(`http://localhost:3001/auth/grupos/${idGrupo}/miembros`);
-      const data = await response.json();
-      setUsuarios(data.miembros);
-    } catch (error) {
-      console.error("Error al cargar usuarios del grupo:", error);
-    }
-  };
-  cargarUsuarios();
-}, []);
+  useEffect(() => {
+    const idGrupo = localStorage.getItem("tempGroupId");
+    const userId = localStorage.getItem("userId");
 
+    const cargarUsuarios = async () => {
+      try {
+        const response = await fetch(`http://localhost:3001/auth/grupos/${idGrupo}/miembros`);
+        const data = await response.json();
+        const dataMiembros = data.miembros;
+        const otrosUsuarios = dataMiembros.filter(usuario => usuario.id !== Number(userId));
+        setUsuarios(otrosUsuarios);
+      } catch (error) {
+        console.error("Error al cargar usuarios del grupo:", error);
+      }
+    };
+    cargarUsuarios();
+  }, []);
 
-
- useEffect(() => {
+  useEffect(() => {
     socket.on("nuevo_mensaje", (mensajeRecibido) => {
       if (mensajeRecibido.remitente_id === selectedUserId) {
         const contenidoMostrado = mensajeRecibido.es_cifrado ? descifrarMensaje(mensajeRecibido.contenido) : mensajeRecibido.contenido;
@@ -109,50 +107,78 @@ useEffect(() => {
     };
   }, [selectedUserId]);
 
-
-useEffect(() => {
-  scrollToBottom();
-}, [mensajes]);
+  useEffect(() => {
+    scrollToBottom();
+  }, [mensajes]);
 
   const scrollToBottom = () => {
-  if (mensajesEndRef.current) {
-    mensajesEndRef.current.scrollIntoView({ behavior: "smooth" });
-  }
-};
-
-
-   const openModal = () => {
-     setIsOpen(true);
-     setShowPreview(true);
-   };
- 
-
-   const closeModal = () => {
-     setIsOpen(false);
-     setShowPreview(false); 
-   };
-  
-   const manejarClick = async (usuarioId) => {
-  setSelectedUserId(usuarioId);
-  const usuario = usuarios.find((u) => u.id === usuarioId);
-  setNombreUser(usuario?.nombre || "");
-
-  const remitenteId = localStorage.getItem("userId");
-
-   try {
-      const res = await fetch(`http://localhost:3001/mensajes/conversacion?usuario1=${remitenteId}&usuario2=${usuarioId}`);
-      const data = await res.json();
-      if (data.success) {
-        const mensajesDescifrados = data.mensajes.map(msg => ({
-          ...msg,
-          contenido: msg.es_cifrado ? descifrarMensaje(msg.contenido) : msg.contenido
-        }));
-        setMensajes(mensajesDescifrados);
-      }
-    } catch (err) {
-      console.error("Error al cargar mensajes:", err);
+    if (mensajesEndRef.current) {
+      mensajesEndRef.current.scrollIntoView({ behavior: "smooth" });
     }
   };
+
+  const openModal = () => {
+    setIsOpen(true);
+    setShowPreview(true);
+  };
+
+  const closeModal = () => {
+    setIsOpen(false);
+    setShowPreview(false);
+  };
+
+
+const manejarClick = async (usuarioId) => {
+  if (selectedUserId !== usuarioId) {
+    setSelectedUserId(usuarioId);
+    const usuario = usuarios.find((u) => u.id === usuarioId);
+    setNombreUser(usuario?.nombre || "");
+    setMensajes([]);
+    
+    const remitenteId = localStorage.getItem("userId");
+    const grupoId = localStorage.getItem("tempGroupId");
+
+    try {
+      const res = await fetch(
+        `http://localhost:3001/mensajes/conversacion?usuario1=${remitenteId}&usuario2=${usuarioId}&grupoId=${grupoId}`
+      );
+      
+      if (!res.ok) {
+        throw new Error(`Error HTTP: ${res.status}`);
+      }
+      
+      const mensajes = await res.json(); 
+      
+      const mensajesFormateados = mensajes.map(msg => ({
+        id: msg.id,
+        texto: msg.es_cifrado ? descifrarMensaje(msg.contenido) : msg.contenido,
+        contenido: msg.contenido, 
+        es_cifrado: msg.es_cifrado,
+        tipo: msg.tipo,
+        remitente_id: msg.remitente_id,
+        destinatario_id: msg.destinatario_id,
+        grupo_id: msg.grupo_id,
+        fecha: msg.fecha,
+        remitente_nombre: msg.remitente_nombre,
+        esMio: msg.remitente_id === parseInt(localStorage.getItem("userId")),
+        fechaLegible: new Date(msg.fecha).toLocaleString('es-ES', {
+          day: '2-digit',
+          month: '2-digit',
+          year: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit'
+        })
+      }));
+      
+      setMensajes(mensajesFormateados);
+      
+    } catch (err) {
+      console.error("Error al cargar mensajes:", err);
+      setMensajes([]);
+      alert("No se pudieron cargar los mensajes. Intenta nuevamente.");
+    }
+  }
+};
 
   const compartirUbicacion = () => {
     if (navigator.geolocation) {
@@ -166,64 +192,86 @@ useEffect(() => {
     }
   };
 
+ const enviarMensaje = async (e) => {
+  e.preventDefault();
+  const remitenteId = parseInt(localStorage.getItem("userId"));
+  const grupoId = localStorage.getItem("tempGroupId");
 
+  if (!mensaje?.trim() || !selectedUserId) return;
 
-  const enviarMensaje = async (e) => {
-    e.preventDefault();
-    const remitenteId = localStorage.getItem("userId");
+  const contenidoFinal = cifrado ? cifrarMensaje(mensaje) : mensaje;
 
-    if ((!mensaje || mensaje.trim() === "") || !selectedUserId) return;
-
-    const contenidoFinal = cifrado ? cifrarMensaje(mensaje) : mensaje;
-
-    const payload = {
-      remitente_id: remitenteId,
-      destinatario_id: selectedUserId,
-      contenido: contenidoFinal,
-      es_cifrado: cifrado ? 1 : 0,
-      tipo: "texto"
-    };
-
-    try {
-      const response = await fetch("http://localhost:3001/mensajes/privado", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify(payload)
-      });
-
-      const result = await response.json();
-      if (result.success) {
-        const nuevoMensaje = {
-          id: mensajes.length + 1,
-          texto: mensaje,
-          archivo: null,
-        };
-        setMensajes([...mensajes, nuevoMensaje]);
-        setMensaje("");
-      } else {
-        alert("Error al enviar mensaje");
-      }
-    } catch (error) {
-      console.error("Error al enviar mensaje:", error);
-    }
+  // Crear mensaje optimista (se muestra inmediatamente)
+  const mensajeOptimista = {
+    id: Date.now(), // ID temporal
+    contenido: contenidoFinal,
+    texto: mensaje, // Versión sin cifrar para mostrar
+    es_cifrado: cifrado,
+    tipo: "texto",
+    remitente_id: remitenteId,
+    destinatario_id: selectedUserId,
+    grupo_id: grupoId ? parseInt(grupoId) : null,
+    fecha: new Date().toISOString(),
+    remitente_nombre: "Tú", // O obtener de localStorage
+    esMio: true,
+    estado: 'enviando'
   };
 
+  // Actualización optimista del estado
+  setMensajes(prev => [...prev, mensajeOptimista]);
+  setMensaje("");
 
+  try {
+    const response = await fetch("http://localhost:3001/mensajes/privado", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        remitente_id: remitenteId,
+        destinatario_id: selectedUserId,
+        contenido: contenidoFinal,
+        es_cifrado: cifrado ? 1 : 0,
+        tipo: "texto",
+        grupoId: grupoId
+      })
+    });
 
-
-
-
-
-
-
-
-
+    const result = await response.json();
+    
+    if (response.ok) {
+      // Reemplazar mensaje optimista por el definitivo del servidor
+      setMensajes(prev => prev.map(msg => 
+        msg.id === mensajeOptimista.id ? {
+          ...mensajeOptimista,
+          id: result.id || msg.id, // Usar ID real del servidor
+          estado: 'entregado',
+          fecha: result.fecha || msg.fecha
+        } : msg
+      ));
+    } else {
+      // Marcar mensaje como fallido
+      setMensajes(prev => prev.map(msg => 
+        msg.id === mensajeOptimista.id ? {
+          ...msg,
+          estado: 'error'
+        } : msg
+      ));
+      alert(result.message || "Error al enviar mensaje");
+    }
+  } catch (error) {
+    console.error("Error al enviar mensaje:", error);
+    setMensajes(prev => prev.map(msg => 
+      msg.id === mensajeOptimista.id ? {
+        ...msg,
+        estado: 'error'
+      } : msg
+    ));
+    alert("Error de conexión. El mensaje se enviará cuando se recupere la conexión.");
+  }
+};
 
   return (
-    
     <div className="h-full w-full flex bg-gray-900 text-white">
+        <div className="h-full w-full flex bg-gray-900 text-white">
       
         <aside className="w-64 bg-gray-800 p-4 shadow-lg">
           <Link to="/home2" className="text-blue-400 hover:underline mt-4">
@@ -265,15 +313,32 @@ useEffect(() => {
             </div>
           </div>
 
-<div className="flex-1 p-6 overflow-y-auto mb-40">
-          {mensajes.map((msg) => (
-            <div key={msg.id} className="mb-4">
+        <div className="flex-1 p-6 overflow-y-auto mb-40">
+          {!selectedUserId ? (
+            <div className="flex flex-col items-center justify-center h-full text-gray-400">
+              <div className="text-2xl mb-4">👋</div>
+              <div className="text-xl font-semibold">Selecciona un contacto</div>
+              <p className="text-center max-w-md mt-2">
+                Elige a una persona de la lista para iniciar una conversación
+              </p>
+            </div>
+          ) : mensajes.length === 0 ? (
+            <div className="flex flex-col items-center justify-center h-full text-gray-400">
+              <div className="text-2xl mb-4">💬</div>
+              <div className="text-xl font-semibold">No hay mensajes aún</div>
+              <p className="text-center max-w-md mt-2">
+                Envía un mensaje para iniciar la conversación con {nombreUser}
+              </p>
+            </div>
+          ) : (
+            mensajes.map((msg) => (
+               <div key={msg.id} className="mb-4">
               <div className="bg-gray-700 p-4 rounded-lg max-w-md">
                 <div className="text-xs text-gray-400 mb-1">
                   <span className="font-semibold">{msg.remitente_id === parseInt(localStorage.getItem("userId")) ? 'Tú' : nombreUser}</span>
-                  {' • '}{new Date(msg.fecha).toLocaleString()}
+                  {' • '}{new Date().toLocaleString()}
                 </div>
-                <p>{cifrado ? "[Mensaje Cifrado]" : msg.contenido}</p>
+                <p>{cifrado ? "[Mensaje Cifrado]" : msg.texto}</p>
 
                 {msg.archivo && (
                   typeof msg.archivo === "string" ? (
@@ -288,62 +353,94 @@ useEffect(() => {
                 )}
               </div>
             </div>
-          ))}
+            ))
+          )}
         </div>
 
         <div ref={mensajesEndRef} />
 
 
-          <form onSubmit={enviarMensaje} className="absolute inset-x-0 bottom-0 p-4 bg-gray-800 flex flex-col gap-2">
-                 
-                 <div className="flex items-center gap-2 bg-gray-700 p-2 rounded-lg">
-                    <input
-                      type="text"
-                      value={mensaje}
-                      onChange={(e) => setMensaje(e.target.value)}
-                      placeholder="Escribe un mensaje..."
-                      className="flex-1 p-2 bg-transparent text-white focus:outline-none focus:ring-2 focus:ring-yellow-400"
-                    />
-                    <label className="cursor-pointer text-gray-400 hover:text-white ">
-                      <input
-                         type="file"
-                         onChange={(e) => setArchivo(e.target.files[0])} 
-                         className="hidden"
-                      />
-                      <img src={clipIcon} alt="Adjuntar archivo" className="w-6 h-6" />
-                    </label>
-                    <button
-                      type="submit"
-                      className="bg-yellow-400 text-gray-100 px-4 py-2 rounded-lg font-semibold hover:bg-yellow-500 transition"
-                       >
-                      Enviar
-                    </button>
-                  </div>                 
+      <form 
+          onSubmit={enviarMensaje} 
+          className={`absolute inset-x-0 bottom-0 p-4 bg-gray-800 flex flex-col gap-2 ${
+            !selectedUserId ? "opacity-50 pointer-events-none" : ""
+          }`}
+        >
+          <div className="flex items-center gap-2 bg-gray-700 p-2 rounded-lg">
+            <input
+              type="text"
+              value={mensaje}
+              onChange={(e) => setMensaje(e.target.value)}
+              placeholder={!selectedUserId ? "Selecciona un contacto para chatear" : "Escribe un mensaje..."}
+              className="flex-1 p-2 bg-transparent text-white focus:outline-none focus:ring-2 focus:ring-yellow-400"
+              disabled={!selectedUserId}
+            />
+            <label className={`cursor-pointer ${!selectedUserId ? "text-gray-500" : "text-gray-400 hover:text-white"}`}>
+              <input
+                type="file"
+                onChange={(e) => setArchivo(e.target.files[0])} 
+                className="hidden"
+                disabled={!selectedUserId}
+              />
+              <img 
+                src={clipIcon} 
+                alt="Adjuntar archivo" 
+                className="w-6 h-6" 
+                style={{ opacity: !selectedUserId ? 0.5 : 1 }}
+              />
+            </label>
+            <button
+              type="submit"
+              className={`px-4 py-2 rounded-lg font-semibold transition ${
+                !selectedUserId 
+                  ? "bg-gray-500 text-gray-300 cursor-not-allowed" 
+                  : "bg-yellow-400 text-gray-100 hover:bg-yellow-500"
+              }`}
+              disabled={!selectedUserId}
+            >
+              Enviar
+            </button>
+          </div>                 
 
-                  <div className="flex gap-2">
-                    <button
-                      type="button"
-                      onClick={compartirUbicacion}
-                      className="bg-blue-500 text-white px-4 py-2 rounded-lg font-semibold hover:bg-blue-600 transition"
-                    >
-                      Compartir Ubicación 📌
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setCifrado(!cifrado)}
-                      className="bg-red-500 text-white px-4 py-2 rounded-lg font-semibold hover:bg-red-600 transition"
-                    >
-                      {cifrado ? "Desactivar Cifrado 🔓" : "Activar Cifrado 🔐"}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={openModal}
-                      className="bg-red-500 text-white px-4 py-2 rounded-lg font-semibold hover:bg-red-600 transition"
-                    >
-                      Empezar Videollamada 📹
-                    </button>
-                  </div>
-            </form>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={compartirUbicacion}
+              className={`px-4 py-2 rounded-lg font-semibold transition ${
+                !selectedUserId 
+                  ? "bg-gray-500 text-gray-300 cursor-not-allowed" 
+                  : "bg-blue-500 text-white hover:bg-blue-600"
+              }`}
+              disabled={!selectedUserId}
+            >
+              Compartir Ubicación 📌
+            </button>
+            <button
+              type="button"
+              onClick={() => setCifrado(!cifrado)}
+              className={`px-4 py-2 rounded-lg font-semibold transition ${
+                !selectedUserId 
+                  ? "bg-gray-500 text-gray-300 cursor-not-allowed" 
+                  : "bg-red-500 text-white hover:bg-red-600"
+              }`}
+              disabled={!selectedUserId}
+            >
+              {cifrado ? "Desactivar Cifrado 🔓" : "Activar Cifrado 🔐"}
+            </button>
+            <button
+              type="button"
+              onClick={openModal}
+              className={`px-4 py-2 rounded-lg font-semibold transition ${
+                !selectedUserId 
+                  ? "bg-gray-500 text-gray-300 cursor-not-allowed" 
+                  : "bg-red-500 text-white hover:bg-red-600"
+              }`}
+              disabled={!selectedUserId}
+            >
+              Empezar Videollamada 📹
+            </button>
+          </div>
+        </form>
         </main>
 
       
@@ -413,8 +510,9 @@ useEffect(() => {
 
         </div>
 
-
+</div>
   );
 }
 
 export default ChatIndividual;
+
