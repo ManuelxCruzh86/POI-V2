@@ -3,19 +3,18 @@ const express = require("express");
 const http = require("http");
 const socketIo = require("socket.io");
 const cors = require("cors");
-const mensajes = require("./routes/mensajes"); 
 const authRoutes = require("./routes/auth");
 const db = require("./db");
 const jwt = require("jsonwebtoken");
 const SECRET_KEY = "tu_clave_secreta";
 const multer = require('multer');
-const path = require('path');
 const fs = require('fs');
 
+const fileUpload = require('express-fileupload');
+const path = require('path');
 const app = express();
 const server = http.createServer(app);
 const mensajesRouter = require("./routes/mensajes");
-
 
 /* const io= require('socket.io')(server,{
     cors:{origin: '*'}
@@ -45,9 +44,7 @@ io.on('connection', (socket) => {
         console.log('Mensaje recibido:', data);
         io.emit('chat_message', {
             usuario: data.usuario,
-            mensaje: data.mensaje,
-            usuario_id: data.usuario_id,
-            created_at: data.created_at,
+            mensaje: data.mensaje
         });
     });
 });
@@ -77,6 +74,9 @@ app.use((req, res, next) => {
   req.io = io;
   next();
 });
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
+
 
 // Rutas válidas
 app.use("/auth", authRoutes);

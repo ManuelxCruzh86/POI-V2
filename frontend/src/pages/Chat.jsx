@@ -97,15 +97,22 @@ useEffect(() => {
 
  useEffect(() => {
     socket.on("nuevo_mensaje", (mensajeRecibido) => {
-      if (mensajeRecibido.remitente_id === selectedUserId) {
-        const contenidoMostrado = mensajeRecibido.es_cifrado ? descifrarMensaje(mensajeRecibido.contenido) : mensajeRecibido.contenido;
-        setMensajes((prev) => [...prev, {
-          id: prev.length + 1,
-          contenido: contenidoMostrado,
-          archivo: null,
-        }]);
-      }
-    });
+  if (mensajeRecibido.remitente_id === selectedUserId) {
+    const contenidoMostrado = mensajeRecibido.es_cifrado
+      ? descifrarMensaje(mensajeRecibido.contenido)
+      : mensajeRecibido.contenido;
+
+    const nuevoMensaje = {
+      id: mensajes.length + 1,
+      contenido: contenidoMostrado,
+      archivo: mensajeRecibido.tipo === "archivo" ? mensajeRecibido.archivo : null,
+      tipo: mensajeRecibido.tipo,
+    };
+
+    setMensajes((prev) => [...prev, nuevoMensaje]);
+  }
+});
+
 
     return () => {
       socket.off("nuevo_mensaje");
@@ -147,10 +154,12 @@ useEffect(() => {
       const res = await fetch(`http://localhost:3001/mensajes/conversacion?usuario1=${remitenteId}&usuario2=${usuarioId}&grupoId=${grupoIdRef}`);
       const data = await res.json();
       if (data.success) {
-        const mensajesDescifrados = data.mensajes.map(msg => ({
-          ...msg,
-          contenido: msg.es_cifrado ? descifrarMensaje(msg.contenido) : msg.contenido
-        }));
+
+const mensajesDescifrados = data.mensajes.map(msg => ({
+  ...msg,
+  contenido: msg.es_cifrado ? descifrarMensaje(msg.contenido) : msg.contenido,
+  archivo: msg.tipo === "archivo" ? `http://localhost:3001/uploads/${msg.contenido}` : null
+    }));
         setMensajes(mensajesDescifrados);
       }
     } catch (err) {
@@ -173,58 +182,81 @@ useEffect(() => {
 
 
   const enviarMensaje = async (e) => {
-    e.preventDefault();
-    const remitenteId = localStorage.getItem("userId");
-    const grupoIdRef = localStorage.getItem("tempGroupId");
+  e.preventDefault();
+  const remitenteId = localStorage.getItem("userId");
+  const grupoIdRef = localStorage.getItem("tempGroupId");
 
-    if ((!mensaje || mensaje.trim() === "") || !selectedUserId) return;
+  if (!selectedUserId) return;
 
-    const contenidoFinal = cifrado ? cifrarMensaje(mensaje) : mensaje;
-
-    const payload = {
-      remitente_id: remitenteId,
-      destinatario_id: selectedUserId,
-      contenido: contenidoFinal,
-      es_cifrado: cifrado ? 1 : 0,
-      tipo: "texto",
-      grupo_id: grupoIdRef
-    };
+  // Si hay archivo, subimos el archivo primero
+  if (archivo) {
+    const formData = new FormData();
+    formData.append("archivo", archivo);
+    formData.append("remitente_id", remitenteId);
+    formData.append("destinatario_id", selectedUserId);
+    formData.append("grupo_id", grupoIdRef);
+    formData.append("es_cifrado", cifrado ? 1 : 0);
 
     try {
-      const response = await fetch("http://localhost:3001/mensajes/privado", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify(payload)
+      const res = await fetch("http://localhost:3001/mensajes/archivo", {
+      method: "POST",
+      body: formData,
       });
 
-      const result = await response.json();
+      const result = await res.json();
       if (result.success) {
-        const nuevoMensaje = {
-          id: mensajes.length + 1,
-          contenido: mensaje,
-          archivo: null,
-        };
-        setMensajes([...mensajes, nuevoMensaje]);
-        setMensaje("");
-      } else {
-        alert("Error al enviar mensaje");
-      }
-    } catch (error) {
-      console.error("Error al enviar mensaje:", error);
+      const nuevoMensaje = {
+        id: mensajes.length + 1,
+        contenido: archivo.name,
+        archivo: `/uploads/${result.archivo}`,
+        tipo: "archivo" // 👈 FALTA ESTE CAMPO
+      };
+      setMensajes([...mensajes, nuevoMensaje]);
+      setArchivo(null);
+      setMensaje("");
+      return;
     }
+    } catch (error) {
+      console.error("Error al enviar archivo:", error);
+    }
+  }
+
+  // Si es mensaje de texto
+  if (!mensaje.trim()) return;
+
+  const contenidoFinal = cifrado ? cifrarMensaje(mensaje) : mensaje;
+
+  const payload = {
+    remitente_id: remitenteId,
+    destinatario_id: selectedUserId,
+    contenido: contenidoFinal,
+    es_cifrado: cifrado ? 1 : 0,
+    tipo: "texto",
+    grupo_id: grupoIdRef,
   };
 
+  try {
+    const response = await fetch("http://localhost:3001/mensajes/privado", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload),
+    });
 
-
-
-
-
-
-
-
-
+    const result = await response.json();
+    if (result.success) {
+      setMensajes([...mensajes, {
+        id: mensajes.length + 1,
+        contenido: mensaje,
+        archivo: null,
+      }]);
+      setMensaje("");
+    }
+  } catch (error) {
+    console.error("Error al enviar mensaje:", error);
+  }
+};
 
 
   return (
@@ -299,15 +331,19 @@ useEffect(() => {
                 <p>{cifrado ? "[Mensaje Cifrado]" : msg.contenido}</p>
 
                 {msg.archivo && (
-                  typeof msg.archivo === "string" ? (
-                    msg.archivo.endsWith(".png") || msg.archivo.endsWith(".jpg") || msg.archivo.endsWith(".jpeg") ? (
-                      <img src={msg.archivo} alt="Archivo adjunto" className="max-w-full h-auto" />
+                  <div className="mt-2">
+                    {/\.(png|jpg|jpeg|gif)$/i.test(msg.archivo) ? (
+                      <img src={msg.archivo} alt="Archivo" className="max-w-full h-auto rounded-lg" />
                     ) : (
-                      <a href={msg.archivo} target="_blank" rel="noopener noreferrer" className="text-blue-400">Ver archivo</a>
-                    )
-                  ) : (
-                    <p>Archivo adjunto</p>
-                  )
+                     <a 
+  href={`http://localhost:3001/mensajes/descargar/${msg.archivo.split("/").pop()}`} 
+
+  className="text-blue-400 underline"
+>
+  Descargar archivo: {msg.contenido}
+</a>
+                    )}
+                  </div>
                 )}
               </div>
             </div>
@@ -336,10 +372,14 @@ useEffect(() => {
             <label className={`cursor-pointer ${!selectedUserId ? "text-gray-500" : "text-gray-400 hover:text-white"}`}>
               <input
                 type="file"
-                onChange={(e) => setArchivo(e.target.files[0])} 
-                className="hidden"
-                disabled={!selectedUserId}
+                name="archivo" // ← Asegúrate de que esto esté presente
+                onChange={(e) => {
+                  const file = e.target.files[0];
+                  setArchivo(file);
+                  console.log("Archivo seleccionado:", file);
+                }}
               />
+
               <img 
                 src={clipIcon} 
                 alt="Adjuntar archivo" 

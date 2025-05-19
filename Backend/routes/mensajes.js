@@ -1,6 +1,28 @@
 const express = require("express");
 const router = express.Router();
 const db = require("../db").promise();
+const multer = require('multer');
+const fs = require('fs');
+const path = require('path');
+
+const uploadsDir = path.join(__dirname, 'uploads');
+
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir, { recursive: true });
+  console.log('Carpeta "uploads" creada.');
+}
+
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, 'uploads/'); // crea la carpeta si no existe
+  },
+  filename: (req, file, cb) => {
+    const uniqueName = `${Date.now()}-${file.originalname}`;
+    cb(null, uniqueName);
+  },
+});
+const upload = multer({ storage });
+
 
 router.post("/privado", async (req, res) => {
   const { remitente_id, destinatario_id, contenido, es_cifrado, tipo, grupo_id } = req.body;
@@ -26,6 +48,19 @@ router.post("/privado", async (req, res) => {
     res.status(500).json({ success: false, error: err.message });
   }
 });
+
+router.get("/descargar/:nombre", (req, res) => {
+  const nombre = req.params.nombre;
+  const ruta = path.join(__dirname, "..", "uploads", nombre);
+
+  res.download(ruta, nombre, (err) => {
+    if (err) {
+      console.error("Error al descargar:", err);
+      res.status(500).send("Error al descargar el archivo");
+    }
+  });
+});
+
 
 router.get("/conversacion", async (req, res) => {
   const { usuario1, usuario2, grupoId } = req.query;
@@ -81,6 +116,61 @@ router.get("/obtener/:remitente_id/:destinatario_id", (req, res) => {
         }
     );
 });
+
+router.post("/archivo", upload.single("archivo"), async (req, res) => {
+    console.log("📦 Entrando al endpoint /archivo");
+  const { remitente_id, destinatario_id, grupo_id, es_cifrado } = req.body;
+  const archivo = req.file;
+
+  if (!archivo) {
+        console.log("❌ No se recibió archivo");
+    return res.status(400).json({ success: false, error: "No se proporcionó archivo" });
+  }
+
+  try {
+    // Guarda el mensaje de tipo archivo
+        console.log("✅ Archivo recibido:", archivo.originalname);
+    const [resultado] = await db.query(
+      "INSERT INTO mensajes (remitente_id, destinatario_id, grupo_id, contenido, es_cifrado, tipo) VALUES (?, ?, ?, ?, ?, ?)",
+      [remitente_id, destinatario_id, grupo_id || null, archivo.filename, es_cifrado || 0, "archivo"]
+    );
+
+    const mensajeId = resultado.insertId;
+
+    // Guarda la info del archivo (opcional, pero recomendado)
+    await db.query(
+      "INSERT INTO archivos (url, nombre, tipo, mensaje_id) VALUES (?, ?, ?, ?)",
+      [`/uploads/${archivo.filename}`, archivo.originalname, archivo.mimetype, mensajeId]
+    );
+
+    // Emitir evento a socket para que se refleje en el chat del destinatario
+    req.io.to(destinatario_id.toString()).emit("nuevo_mensaje", {
+      remitente_id,
+      contenido: archivo.originalname,
+      archivo: `http://localhost:3001/uploads/${archivo.filename}`,
+      tipo: "archivo",
+      es_cifrado: es_cifrado || 0,
+      fecha: new Date()
+    });
+
+    // Enviar respuesta completa
+    res.status(200).json({
+      success: true,
+      archivo: archivo.filename,
+      mensaje: {
+        id: mensajeId,
+        contenido: archivo.originalname,
+        archivo: `http://localhost:3001/uploads/${archivo.filename}`,
+        tipo: "archivo"
+      }
+    });
+  } catch (err) {
+    console.error("Error al guardar archivo:", err.message);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+
 
 router.get("/obtener/:idChat", (req, res) => {
     const idChat = req.params.idChat;
