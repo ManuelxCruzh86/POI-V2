@@ -77,12 +77,15 @@ useEffect(() => {
 
   useEffect(() => {
   const idGrupo = localStorage.getItem("tempGroupId");
+  const userId = localStorage.getItem("userId");
 
   const cargarUsuarios = async () => {
     try {
       const response = await fetch(`http://localhost:3001/auth/grupos/${idGrupo}/miembros`);
       const data = await response.json();
-      setUsuarios(data.miembros);
+      const dataMiembros = data.miembros;
+      const otrosUsuarios = dataMiembros.filter(usuario => usuario.id !== Number(userId));
+      setUsuarios(otrosUsuarios);
     } catch (error) {
       console.error("Error al cargar usuarios del grupo:", error);
     }
@@ -98,7 +101,7 @@ useEffect(() => {
         const contenidoMostrado = mensajeRecibido.es_cifrado ? descifrarMensaje(mensajeRecibido.contenido) : mensajeRecibido.contenido;
         setMensajes((prev) => [...prev, {
           id: prev.length + 1,
-          texto: contenidoMostrado,
+          contenido: contenidoMostrado,
           archivo: null,
         }]);
       }
@@ -138,9 +141,10 @@ useEffect(() => {
   setNombreUser(usuario?.nombre || "");
 
   const remitenteId = localStorage.getItem("userId");
+  const grupoIdRef = localStorage.getItem("tempGroupId");
 
    try {
-      const res = await fetch(`http://localhost:3001/mensajes/conversacion?usuario1=${remitenteId}&usuario2=${usuarioId}`);
+      const res = await fetch(`http://localhost:3001/mensajes/conversacion?usuario1=${remitenteId}&usuario2=${usuarioId}&grupoId=${grupoIdRef}`);
       const data = await res.json();
       if (data.success) {
         const mensajesDescifrados = data.mensajes.map(msg => ({
@@ -159,7 +163,7 @@ useEffect(() => {
       navigator.geolocation.getCurrentPosition((position) => {
         const { latitude, longitude } = position.coords;
         const link = `https://www.google.com/maps?q=${latitude},${longitude}`;
-        setMensajes([...mensajes, { id: mensajes.length + 1, texto: "Ubicación compartida", archivo: link }]);
+        setMensajes([...mensajes, { id: mensajes.length + 1, contenido: "Ubicación compartida", archivo: link }]);
       });
     } else {
       alert("La geolocalización no está soportada en este navegador.");
@@ -171,6 +175,7 @@ useEffect(() => {
   const enviarMensaje = async (e) => {
     e.preventDefault();
     const remitenteId = localStorage.getItem("userId");
+    const grupoIdRef = localStorage.getItem("tempGroupId");
 
     if ((!mensaje || mensaje.trim() === "") || !selectedUserId) return;
 
@@ -181,7 +186,8 @@ useEffect(() => {
       destinatario_id: selectedUserId,
       contenido: contenidoFinal,
       es_cifrado: cifrado ? 1 : 0,
-      tipo: "texto"
+      tipo: "texto",
+      grupo_id: grupoIdRef
     };
 
     try {
@@ -197,7 +203,7 @@ useEffect(() => {
       if (result.success) {
         const nuevoMensaje = {
           id: mensajes.length + 1,
-          texto: mensaje,
+          contenido: mensaje,
           archivo: null,
         };
         setMensajes([...mensajes, nuevoMensaje]);
@@ -222,8 +228,8 @@ useEffect(() => {
 
 
   return (
-    
     <div className="h-full w-full flex bg-gray-900 text-white">
+        <div className="h-full w-full flex bg-gray-900 text-white">
       
         <aside className="w-64 bg-gray-800 p-4 shadow-lg">
           <Link to="/home2" className="text-blue-400 hover:underline mt-4">
@@ -265,13 +271,30 @@ useEffect(() => {
             </div>
           </div>
 
-<div className="flex-1 p-6 overflow-y-auto mb-40">
-          {mensajes.map((msg) => (
-            <div key={msg.id} className="mb-4">
+        <div className="flex-1 p-6 overflow-y-auto mb-40">
+          {!selectedUserId ? (
+            <div className="flex flex-col items-center justify-center h-full text-gray-400">
+              <div className="text-2xl mb-4">👋</div>
+              <div className="text-xl font-semibold">Selecciona un contacto</div>
+              <p className="text-center max-w-md mt-2">
+                Elige a una persona de la lista para iniciar una conversación
+              </p>
+            </div>
+          ) : mensajes.length === 0 ? (
+            <div className="flex flex-col items-center justify-center h-full text-gray-400">
+              <div className="text-2xl mb-4">💬</div>
+              <div className="text-xl font-semibold">No hay mensajes aún</div>
+              <p className="text-center max-w-md mt-2">
+                Envía un mensaje para iniciar la conversación con {nombreUser}
+              </p>
+            </div>
+          ) : (
+            mensajes.map((msg) => (
+               <div key={msg.id} className="mb-4">
               <div className="bg-gray-700 p-4 rounded-lg max-w-md">
                 <div className="text-xs text-gray-400 mb-1">
                   <span className="font-semibold">{msg.remitente_id === parseInt(localStorage.getItem("userId")) ? 'Tú' : nombreUser}</span>
-                  {' • '}{new Date(msg.fecha).toLocaleString()}
+                  {' • '}{new Date().toLocaleString()}
                 </div>
                 <p>{cifrado ? "[Mensaje Cifrado]" : msg.contenido}</p>
 
@@ -288,62 +311,94 @@ useEffect(() => {
                 )}
               </div>
             </div>
-          ))}
+            ))
+          )}
         </div>
 
         <div ref={mensajesEndRef} />
 
 
-          <form onSubmit={enviarMensaje} className="absolute inset-x-0 bottom-0 p-4 bg-gray-800 flex flex-col gap-2">
-                 
-                 <div className="flex items-center gap-2 bg-gray-700 p-2 rounded-lg">
-                    <input
-                      type="text"
-                      value={mensaje}
-                      onChange={(e) => setMensaje(e.target.value)}
-                      placeholder="Escribe un mensaje..."
-                      className="flex-1 p-2 bg-transparent text-white focus:outline-none focus:ring-2 focus:ring-yellow-400"
-                    />
-                    <label className="cursor-pointer text-gray-400 hover:text-white ">
-                      <input
-                         type="file"
-                         onChange={(e) => setArchivo(e.target.files[0])} 
-                         className="hidden"
-                      />
-                      <img src={clipIcon} alt="Adjuntar archivo" className="w-6 h-6" />
-                    </label>
-                    <button
-                      type="submit"
-                      className="bg-yellow-400 text-gray-100 px-4 py-2 rounded-lg font-semibold hover:bg-yellow-500 transition"
-                       >
-                      Enviar
-                    </button>
-                  </div>                 
+      <form 
+          onSubmit={enviarMensaje} 
+          className={`absolute inset-x-0 bottom-0 p-4 bg-gray-800 flex flex-col gap-2 ${
+            !selectedUserId ? "opacity-50 pointer-events-none" : ""
+          }`}
+        >
+          <div className="flex items-center gap-2 bg-gray-700 p-2 rounded-lg">
+            <input
+              type="text"
+              value={mensaje}
+              onChange={(e) => setMensaje(e.target.value)}
+              placeholder={!selectedUserId ? "Selecciona un contacto para chatear" : "Escribe un mensaje..."}
+              className="flex-1 p-2 bg-transparent text-white focus:outline-none focus:ring-2 focus:ring-yellow-400"
+              disabled={!selectedUserId}
+            />
+            <label className={`cursor-pointer ${!selectedUserId ? "text-gray-500" : "text-gray-400 hover:text-white"}`}>
+              <input
+                type="file"
+                onChange={(e) => setArchivo(e.target.files[0])} 
+                className="hidden"
+                disabled={!selectedUserId}
+              />
+              <img 
+                src={clipIcon} 
+                alt="Adjuntar archivo" 
+                className="w-6 h-6" 
+                style={{ opacity: !selectedUserId ? 0.5 : 1 }}
+              />
+            </label>
+            <button
+              type="submit"
+              className={`px-4 py-2 rounded-lg font-semibold transition ${
+                !selectedUserId 
+                  ? "bg-gray-500 text-gray-300 cursor-not-allowed" 
+                  : "bg-yellow-400 text-gray-100 hover:bg-yellow-500"
+              }`}
+              disabled={!selectedUserId}
+            >
+              Enviar
+            </button>
+          </div>                 
 
-                  <div className="flex gap-2">
-                    <button
-                      type="button"
-                      onClick={compartirUbicacion}
-                      className="bg-blue-500 text-white px-4 py-2 rounded-lg font-semibold hover:bg-blue-600 transition"
-                    >
-                      Compartir Ubicación 📌
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setCifrado(!cifrado)}
-                      className="bg-red-500 text-white px-4 py-2 rounded-lg font-semibold hover:bg-red-600 transition"
-                    >
-                      {cifrado ? "Desactivar Cifrado 🔓" : "Activar Cifrado 🔐"}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={openModal}
-                      className="bg-red-500 text-white px-4 py-2 rounded-lg font-semibold hover:bg-red-600 transition"
-                    >
-                      Empezar Videollamada 📹
-                    </button>
-                  </div>
-            </form>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={compartirUbicacion}
+              className={`px-4 py-2 rounded-lg font-semibold transition ${
+                !selectedUserId 
+                  ? "bg-gray-500 text-gray-300 cursor-not-allowed" 
+                  : "bg-blue-500 text-white hover:bg-blue-600"
+              }`}
+              disabled={!selectedUserId}
+            >
+              Compartir Ubicación 📌
+            </button>
+            <button
+              type="button"
+              onClick={() => setCifrado(!cifrado)}
+              className={`px-4 py-2 rounded-lg font-semibold transition ${
+                !selectedUserId 
+                  ? "bg-gray-500 text-gray-300 cursor-not-allowed" 
+                  : "bg-red-500 text-white hover:bg-red-600"
+              }`}
+              disabled={!selectedUserId}
+            >
+              {cifrado ? "Desactivar Cifrado 🔓" : "Activar Cifrado 🔐"}
+            </button>
+            <button
+              type="button"
+              onClick={openModal}
+              className={`px-4 py-2 rounded-lg font-semibold transition ${
+                !selectedUserId 
+                  ? "bg-gray-500 text-gray-300 cursor-not-allowed" 
+                  : "bg-red-500 text-white hover:bg-red-600"
+              }`}
+              disabled={!selectedUserId}
+            >
+              Empezar Videollamada 📹
+            </button>
+          </div>
+        </form>
         </main>
 
       
@@ -413,7 +468,7 @@ useEffect(() => {
 
         </div>
 
-
+</div>
   );
 }
 
