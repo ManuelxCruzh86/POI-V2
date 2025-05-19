@@ -19,12 +19,11 @@ function ChatIndividual() {
   const [callOn, setCallOn] = useState(false);
   
   const mensajesEndRef = useRef(null);
-  const localVideoRef = useRef(null);
   const groupId = localStorage.getItem("tempGroupId");
   const idLogged = Number(localStorage.getItem("userId"));
   
   // Usar el hook para la videollamada P2P
-  const { partnerStream } = use2PeerCall(
+  const { localVideoRef, partnerStream } = use2PeerCall(
     groupId,
     callOn,
     isMicOn,
