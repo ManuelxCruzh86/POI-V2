@@ -103,11 +103,14 @@ useEffect(() => {
       : mensajeRecibido.contenido;
 
     const nuevoMensaje = {
-      id: mensajes.length + 1,
-      contenido: contenidoMostrado,
-      archivo: mensajeRecibido.tipo === "archivo" ? mensajeRecibido.archivo : null,
-      tipo: mensajeRecibido.tipo,
-    };
+  id: mensajes.length + 1,
+  contenido: contenidoMostrado,
+  archivo:
+    mensajeRecibido.tipo === "archivo" || mensajeRecibido.tipo === "ubicación"
+      ? mensajeRecibido.archivo
+      : null,
+  tipo: mensajeRecibido.tipo,
+};
 
     setMensajes((prev) => [...prev, nuevoMensaje]);
   }
@@ -158,8 +161,15 @@ useEffect(() => {
 const mensajesDescifrados = data.mensajes.map(msg => ({
   ...msg,
   contenido: msg.es_cifrado ? descifrarMensaje(msg.contenido) : msg.contenido,
-  archivo: msg.tipo === "archivo" ? `http://localhost:3001/uploads/${msg.contenido}` : null
-    }));
+  archivo:
+    msg.tipo === "archivo"
+      ? `http://localhost:3001/uploads/${msg.contenido}`
+      : msg.tipo === "ubicación"
+      ? msg.contenido
+      : null,
+  tipo: msg.tipo // 👈 muy importante para que sepa que es "ubicacion"
+}));
+
         setMensajes(mensajesDescifrados);
       }
     } catch (err) {
@@ -167,17 +177,56 @@ const mensajesDescifrados = data.mensajes.map(msg => ({
     }
   };
 
-  const compartirUbicacion = () => {
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition((position) => {
-        const { latitude, longitude } = position.coords;
-        const link = `https://www.google.com/maps?q=${latitude},${longitude}`;
-        setMensajes([...mensajes, { id: mensajes.length + 1, contenido: "Ubicación compartida", archivo: link }]);
-      });
-    } else {
-      alert("La geolocalización no está soportada en este navegador.");
-    }
-  };
+  const compartirUbicacion = async () => {
+  if (!selectedUserId) return;
+
+  if (navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition(async (position) => {
+      const { latitude, longitude } = position.coords;
+      const remitenteId = localStorage.getItem("userId");
+      const grupoIdRef = localStorage.getItem("tempGroupId");
+      const link = `https://www.google.com/maps?q=${latitude},${longitude}`;
+
+      // Enviar la ubicación como mensaje
+      const payload = {
+        remitente_id: remitenteId,
+        destinatario_id: selectedUserId,
+        contenido: link,
+        es_cifrado: 0,
+        tipo: "ubicación",
+        grupo_id: grupoIdRef,
+      };
+
+      try {
+        const response = await fetch("http://localhost:3001/mensajes/privado", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(payload),
+        });
+
+        const result = await response.json();
+        if (result.success) {
+          setMensajes([...mensajes, {
+            id: mensajes.length + 1,
+            contenido: link,     // 👈 Aquí va el link real
+            archivo: link,
+            tipo: "ubicación"
+          }]);
+        }
+      } catch (error) {
+        console.error("Error al enviar ubicación:", error);
+      }
+
+    }, (error) => {
+      alert("No se pudo obtener la ubicación: " + error.message);
+    });
+  } else {
+    alert("La geolocalización no está disponible en este navegador.");
+  }
+};
+
 
 
 
@@ -331,20 +380,33 @@ const mensajesDescifrados = data.mensajes.map(msg => ({
                 <p>{cifrado ? "[Mensaje Cifrado]" : msg.contenido}</p>
 
                 {msg.archivo && (
-                  <div className="mt-2">
-                    {/\.(png|jpg|jpeg|gif)$/i.test(msg.archivo) ? (
-                      <img src={msg.archivo} alt="Archivo" className="max-w-full h-auto rounded-lg" />
-                    ) : (
-                     <a 
-  href={`http://localhost:3001/mensajes/descargar/${msg.archivo.split("/").pop()}`} 
+  <div className="mt-2">
+    {msg.tipo === "ubicación" ? (
+      <a
+        href={msg.archivo}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="text-green-400 underline"
+      >
+        Ver ubicación en Google Maps 🗺️
+      </a>
+    ) : (
+      <>
+        {/\.(png|jpg|jpeg|gif)$/i.test(msg.archivo) ? (
+          <img src={msg.archivo} alt="Archivo" className="max-w-full h-auto rounded-lg" />
+        ) : (
+          <a 
+            href={`http://localhost:3001/mensajes/descargar/${msg.archivo.split("/").pop()}`} 
+            className="text-blue-400 underline"
+          >
+            Descargar archivo: {msg.contenido}
+          </a>
+        )}
+      </>
+    )}
+  </div>
+)}
 
-  className="text-blue-400 underline"
->
-  Descargar archivo: {msg.contenido}
-</a>
-                    )}
-                  </div>
-                )}
               </div>
             </div>
             ))
