@@ -50,7 +50,6 @@ router.get("/conversacion", async (req, res) => {
   }
 });
 
-
 router.post("/enviar", (req, res) => {
     const { contenido, remitente_id, destinatario_id, grupo_id, tipo } = req.body;
 
@@ -93,6 +92,84 @@ router.get("/obtener/:idChat", (req, res) => {
         }
         res.json(results);
     });
+});
+
+//GRUPALES
+router.get("/conversacion-grupo", async (req, res) => {
+  const { grupo_id } = req.query;
+
+  if (!grupo_id) {
+    return res.status(400).json({ success: false, error: "Se requiere el ID del grupo" });
+  }
+
+  try {
+    const [mensajes] = await db.query(`
+      SELECT 
+        mg.id,
+        mg.mensaje,
+        mg.created_at,
+        u.id as usuario_id,
+        u.nombre as usuario_nombre
+      FROM MensajesGrupales mg
+      JOIN Usuarios u ON mg.usuario_id = u.id
+      WHERE mg.grupo_id = ?
+      ORDER BY mg.created_at ASC
+    `, [grupo_id]);
+
+    res.json({ success: true, mensajes });
+  } catch (error) {
+    console.error("Error al obtener mensajes grupales:", error);
+    res.status(500).json({ success: false, error: "Error del servidor" });
+  }
+});
+
+router.post("/enviar-grupo", async (req, res) => {
+  const { grupo_id, usuario_id, mensaje } = req.body;
+
+  if (!grupo_id || !usuario_id || !mensaje) {
+    return res.status(400).json({ 
+      success: false, 
+      error: "Faltan campos requeridos (grupo_id, usuario_id, mensaje)" 
+    });
+  }
+
+  try {
+    const [result] = await db.query(`
+      INSERT INTO MensajesGrupales 
+        (grupo_id, usuario_id, mensaje) 
+      VALUES 
+        (?, ?, ?)
+    `, [grupo_id, usuario_id, mensaje]);
+
+    const [mensajeCreado] = await db.query(`
+      SELECT 
+        mg.*,
+        u.nombre as usuario_nombre,
+        u.avatar_url
+      FROM MensajesGrupales mg
+      JOIN Usuarios u ON mg.usuario_id = u.id
+      WHERE mg.id = ?
+    `, [result.insertId]);
+
+    res.json({ 
+      success: true, 
+      mensaje: mensajeCreado[0] 
+    });
+  } catch (error) {
+    console.error("Error al crear mensaje grupal:", error);
+    
+    if (error.code === 'ER_NO_REFERENCED_ROW_2') {
+      return res.status(400).json({ 
+        success: false, 
+        error: "El grupo o usuario no existe" 
+      });
+    }
+    
+    res.status(500).json({ 
+      success: false, 
+      error: "Error del servidor al crear mensaje" 
+    });
+  }
 });
 
 module.exports = router;

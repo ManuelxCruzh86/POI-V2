@@ -37,7 +37,7 @@ function ChatIndividual() {
   };
 
   useEffect(() => {
-    if (showPreview) {
+    if (showPreview  && typeof navigator !== "undefined" && navigator.mediaDevices?.getUserMedia) {
       navigator.mediaDevices
         .getUserMedia({ video: isVideoOn, audio: isMicOn })
         .then((stream) => {

@@ -45,7 +45,9 @@ io.on('connection', (socket) => {
         console.log('Mensaje recibido:', data);
         io.emit('chat_message', {
             usuario: data.usuario,
-            mensaje: data.mensaje
+            mensaje: data.mensaje,
+            usuario_id: data.usuario_id,
+            created_at: data.created_at,
         });
     });
 });
