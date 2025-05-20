@@ -4,7 +4,7 @@ import { Link } from "react-router-dom";
 import { io } from "socket.io-client";
 import { LiMensaje, UlMensajes } from './ui-components';
 
-const socket = io("http://192.168.0.231:3001");
+const socket = io("http://localhost:3001");
 
 const ChatGrupal = () => {
   const [nuevoMensaje, setNuevoMensaje] = useState("");
@@ -14,6 +14,7 @@ const ChatGrupal = () => {
   const [usuariosConectados, setUsuariosConectados] = useState([]);
   const mensajesContainerRef = useRef(null);
   const [usuarios, setUsuarios] = useState([]);
+  const [cifrado, setCifrado] = useState(false);
 
   useEffect(() => {
     socket.on('connect', () => console.log("Conectado al servidor"));
@@ -103,7 +104,8 @@ console.log("Mensaje recibido:", data.usuario_id, userId);
                 body: JSON.stringify({
                     grupo_id: grupoId,
                     usuario_id: userId,
-                    mensaje: nuevoMensaje
+                    mensaje: nuevoMensaje,
+                    es_cifrado: cifrado ? true : false,
                 })
             });
 
@@ -201,6 +203,13 @@ console.log("Mensaje recibido:", data.usuario_id, userId);
               placeholder="Escribe un mensaje..."
               className="flex-1 p-2 rounded-lg bg-gray-700 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
+            <button
+              type="button"
+              onClick={() => setCifrado(prev => !prev)}
+              className="px-4 py-2 rounded-lg font-semibold transitionbg-red-500 text-white hover:bg-red-600"
+            >
+              {cifrado ? "Desactivar Cifrado 🔓" : "Activar Cifrado 🔐"}
+            </button>
             <button
               type="submit"
               className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center justify-center gap-2"
