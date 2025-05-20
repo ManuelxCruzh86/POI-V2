@@ -19,6 +19,9 @@ export function use2PeerCall(roomID, startCall, isMicOn, isVideoOn) {
 
         // únete y espera “ready”
         socketRef.current.emit("join_room", roomID);
+        socketRef.current.on("connection_error", (err) => {
+          console.error("Error de conexión:", err);
+        });
         socketRef.current.on("ready", () => {
           // si no existe peer, eres iniciador
           const peer = new Peer({ initiator: true, trickle: false, stream });
