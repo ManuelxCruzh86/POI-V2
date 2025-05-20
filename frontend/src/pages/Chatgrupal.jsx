@@ -14,7 +14,6 @@ const ChatGrupal = () => {
   const [usuariosConectados, setUsuariosConectados] = useState([]);
   const mensajesContainerRef = useRef(null);
   const [usuarios, setUsuarios] = useState([]);
-  const [cifrado, setCifrado] = useState(false);
 
   useEffect(() => {
     socket.on('connect', () => console.log("Conectado al servidor"));
@@ -105,7 +104,6 @@ console.log("Mensaje recibido:", data.usuario_id, userId);
                     grupo_id: grupoId,
                     usuario_id: userId,
                     mensaje: nuevoMensaje,
-                    es_cifrado: cifrado ? true : false,
                 })
             });
 
@@ -203,13 +201,6 @@ console.log("Mensaje recibido:", data.usuario_id, userId);
               placeholder="Escribe un mensaje..."
               className="flex-1 p-2 rounded-lg bg-gray-700 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
-            <button
-              type="button"
-              onClick={() => setCifrado(prev => !prev)}
-              className="px-4 py-2 rounded-lg font-semibold transitionbg-red-500 text-white hover:bg-red-600"
-            >
-              {cifrado ? "Desactivar Cifrado 🔓" : "Activar Cifrado 🔐"}
-            </button>
             <button
               type="submit"
               className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center justify-center gap-2"

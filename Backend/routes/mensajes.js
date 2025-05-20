@@ -215,7 +215,7 @@ router.get("/conversacion-grupo", async (req, res) => {
 });
 
 router.post("/enviar-grupo", async (req, res) => {
-  const { grupo_id, usuario_id, mensaje, es_cifrado } = req.body;
+  const { grupo_id, usuario_id, mensaje } = req.body;
 
   if (!grupo_id || !usuario_id || !mensaje) {
     return res.status(400).json({ 
@@ -224,15 +224,13 @@ router.post("/enviar-grupo", async (req, res) => {
     });
   }
 
-  const mensajeFinal = es_cifrado ? brcypt.hashSync(mensaje, 10) : mensaje;
-
   try {
     const [result] = await db.query(`
       INSERT INTO MensajesGrupales 
         (grupo_id, usuario_id, mensaje) 
       VALUES 
         (?, ?, ?)
-    `, [grupo_id, usuario_id, mensajeFinal]);
+    `, [grupo_id, usuario_id, mensaje]);
 
     const [mensajeCreado] = await db.query(`
       SELECT 
