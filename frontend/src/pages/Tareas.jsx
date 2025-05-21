@@ -37,7 +37,8 @@ const Tareas = () => {
 
         const response = await fetch(`https://1822-200-68-188-0.ngrok-free.app/auth/tareas/${grupo_id}/${userId}`, {
           headers: {
-            "Authorization": `Bearer ${localStorage.getItem("token")}`
+            "Authorization": `Bearer ${localStorage.getItem("token")}`,
+            "ngrok-skip-browser-warning": "true",
           }
         });
 
@@ -134,7 +135,8 @@ const Tareas = () => {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${localStorage.getItem("token")}`
+          "Authorization": `Bearer ${localStorage.getItem("token")}`,
+          "ngrok-skip-browser-warning": "true",
         },
         body: JSON.stringify({
           titulo: formData.titulo,
@@ -194,7 +196,8 @@ const Tareas = () => {
       const response = await fetch(`https://1822-200-68-188-0.ngrok-free.app/auth/tareas/${id}/${userId}/completar`, {
         method: "PUT",
         headers: {
-          "Authorization": `Bearer ${localStorage.getItem("token")}`
+          "Authorization": `Bearer ${localStorage.getItem("token")}`,
+          "ngrok-skip-browser-warning": "true",
         }
       });
 
@@ -227,7 +230,8 @@ const Tareas = () => {
       const response = await fetch(`https://1822-200-68-188-0.ngrok-free.app/auth/tareas/${id}`, {
         method: "DELETE",
         headers: {
-          "Authorization": `Bearer ${localStorage.getItem("token")}`
+          "Authorization": `Bearer ${localStorage.getItem("token")}`,
+          "ngrok-skip-browser-warning": "true",
         }
       });
 

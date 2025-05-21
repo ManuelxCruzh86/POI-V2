@@ -3,7 +3,10 @@ import { Link } from "react-router-dom";
 import { io } from "socket.io-client";
 
 const socket = io("https://1822-200-68-188-0.ngrok-free.app/", {
-  auth: { token: localStorage.getItem("token") }
+  auth: { token: localStorage.getItem("token") },
+  extraHeaders: {
+    "ngrok-skip-browser-warning": "true",
+  }
 });
 
 export default function Usuarios() {
@@ -13,7 +16,11 @@ export default function Usuarios() {
     const idGrupo = localStorage.getItem('tempGroupId');
     const cargarUsuarios = async () => {
       try {
-        const response = await fetch(`https://1822-200-68-188-0.ngrok-free.app/auth/grupos/${idGrupo}/miembros`);
+        const response = await fetch(`https://1822-200-68-188-0.ngrok-free.app/auth/grupos/${idGrupo}/miembros`, {
+          headers: {
+            "ngrok-skip-browser-warning": "true",
+          }
+        });
         const data = await response.json();
         setUsers(data.miembros);
       } catch (error) {

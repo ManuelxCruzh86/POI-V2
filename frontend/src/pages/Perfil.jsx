@@ -77,7 +77,10 @@ function Perfil() {
     if (user) {
         try {
             await fetch(`https://1822-200-68-188-0.ngrok-free.app/auth/usuarios/${user.id}/desconectar`, {
-                method: "PUT"
+                method: "PUT",
+                headers: {
+                    "ngrok-skip-browser-warning": "true",
+                }
             });
         } catch (error) {
             console.error("Error al desconectar usuario:", error);
@@ -131,7 +134,8 @@ function Perfil() {
       method: 'PUT',
       body: formData,
       headers: {
-        'Authorization': `Bearer ${localStorage.getItem('token')}`
+        'Authorization': `Bearer ${localStorage.getItem('token')}`,
+        "ngrok-skip-browser-warning": "true",
       }
     });
 

@@ -4,7 +4,11 @@ import { Link } from "react-router-dom";
 import { io } from "socket.io-client";
 import { LiMensaje, UlMensajes } from './ui-components';
 
-const socket = io("https://1822-200-68-188-0.ngrok-free.app/");
+const socket = io("https://1822-200-68-188-0.ngrok-free.app/", {
+  extraHeaders: {
+    "ngrok-skip-browser-warning": "true",
+  }
+});
 
 const ChatGrupal = () => {
   const [nuevoMensaje, setNuevoMensaje] = useState("");
@@ -31,7 +35,11 @@ const ChatGrupal = () => {
 
      const fetchMensajes = async () => {
       try {
-        const response = await fetch(`https://1822-200-68-188-0.ngrok-free.app/mensajes/conversacion-grupo?grupo_id=${grupoId}`);
+        const response = await fetch(`https://1822-200-68-188-0.ngrok-free.app/mensajes/conversacion-grupo?grupo_id=${grupoId}`, {
+          headers: {
+            "ngrok-skip-browser-warning": "true",
+          }
+        });
         if (response.ok) {
           const data = await response.json();
           const mensajesFormateados = data.mensajes.map(msg => ({
@@ -98,7 +106,8 @@ console.log("Mensaje recibido:", data.usuario_id, userId);
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${localStorage.getItem("token")}` 
+                    'Authorization': `Bearer ${localStorage.getItem("token")}`,
+                    "ngrok-skip-browser-warning": "true",
                 },
                 body: JSON.stringify({
                     grupo_id: grupoId,
@@ -126,7 +135,11 @@ console.log("Mensaje recibido:", data.usuario_id, userId);
   
     const cargarUsuarios = async () => {
       try {
-        const response = await fetch(`https://1822-200-68-188-0.ngrok-free.app/auth/grupos/${idGrupo}/miembros`);
+        const response = await fetch(`https://1822-200-68-188-0.ngrok-free.app/auth/grupos/${idGrupo}/miembros`, {
+          headers: {
+            "ngrok-skip-browser-warning": "true",
+          }
+        });
         const data = await response.json();
         const dataMiembros = data.miembros;
         const otrosUsuarios = dataMiembros.filter(usuario => usuario.conectado === 1);

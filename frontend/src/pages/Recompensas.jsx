@@ -11,7 +11,11 @@ export default function RewardsSystem() {
   useEffect(() => {
     const fetchRewards = async () => {
       try {
-        const response = await fetch(`https://1822-200-68-188-0.ngrok-free.app/auth/grupos/${grupoId}/puntos`);
+        const response = await fetch(`https://1822-200-68-188-0.ngrok-free.app/auth/grupos/${grupoId}/puntos`, {
+          headers: {
+            "ngrok-skip-browser-warning": "true",
+          },
+        });
         
         if (!response.ok) {
           throw new Error(`Error: ${response.status}`);
