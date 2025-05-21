@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { io } from "socket.io-client";
 
-const socket = io("http://localhost:3001", {
+const socket = io("https://1822-200-68-188-0.ngrok-free.app/", {
   auth: { token: localStorage.getItem("token") }
 });
 
@@ -13,7 +13,7 @@ export default function Usuarios() {
     const idGrupo = localStorage.getItem('tempGroupId');
     const cargarUsuarios = async () => {
       try {
-        const response = await fetch(`http://localhost:3001/auth/grupos/${idGrupo}/miembros`);
+        const response = await fetch(`https://1822-200-68-188-0.ngrok-free.app/auth/grupos/${idGrupo}/miembros`);
         const data = await response.json();
         setUsers(data.miembros);
       } catch (error) {

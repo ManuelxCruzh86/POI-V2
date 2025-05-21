@@ -10,7 +10,11 @@ export function use2PeerCall(roomID, startCall, isMicOn, isVideoOn) {
 
   useEffect(() => {
     if (!startCall) return;
-    socketRef.current = io("http://localhost:3001");
+    socketRef.current = io("https://1822-200-68-188-0.ngrok-free.app", {
+      extraHeaders: {
+      "ngrok-skip-browser-warning": "true"
+    }
+    });
     navigator.mediaDevices
       ?.getUserMedia({ video: true, audio: true })
       .then((stream) => {
@@ -19,7 +23,7 @@ export function use2PeerCall(roomID, startCall, isMicOn, isVideoOn) {
 
         // únete y espera “ready”
         socketRef.current.emit("join_room", roomID);
-        socketRef.current.on("connection_error", (err) => {
+        socketRef.current.on("connect_error", (err) => {
           console.error("Error de conexión:", err);
         });
         socketRef.current.on("ready", () => {

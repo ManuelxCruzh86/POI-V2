@@ -35,7 +35,7 @@ const Tareas = () => {
         }
         const userId= localStorage.getItem("userId");
 
-        const response = await fetch(`http://localhost:3001/auth/tareas/${grupo_id}/${userId}`, {
+        const response = await fetch(`https://1822-200-68-188-0.ngrok-free.app/auth/tareas/${grupo_id}/${userId}`, {
           headers: {
             "Authorization": `Bearer ${localStorage.getItem("token")}`
           }
@@ -130,7 +130,7 @@ const Tareas = () => {
     setFormLoading(true);
 
     try {
-      const response = await fetch("http://localhost:3001/auth/create/tarea", {
+      const response = await fetch("https://1822-200-68-188-0.ngrok-free.app/auth/create/tarea", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -191,7 +191,7 @@ const Tareas = () => {
   const toggleComplete = async (id) => {
     const userId= localStorage.getItem("userId");
     try {
-      const response = await fetch(`http://localhost:3001/auth/tareas/${id}/${userId}/completar`, {
+      const response = await fetch(`https://1822-200-68-188-0.ngrok-free.app/auth/tareas/${id}/${userId}/completar`, {
         method: "PUT",
         headers: {
           "Authorization": `Bearer ${localStorage.getItem("token")}`
@@ -224,7 +224,7 @@ const Tareas = () => {
   // Eliminar tarea (solo mis tareas)
   const deleteTask = async (id) => {
     try {
-      const response = await fetch(`http://localhost:3001/auth/tareas/${id}`, {
+      const response = await fetch(`https://1822-200-68-188-0.ngrok-free.app/auth/tareas/${id}`, {
         method: "DELETE",
         headers: {
           "Authorization": `Bearer ${localStorage.getItem("token")}`

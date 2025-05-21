@@ -14,7 +14,7 @@ function Login() {
     const handleLogin = async (e) => {
         e.preventDefault();
 
-        const response = await fetch("http://localhost:3001/auth/login", {
+        const response = await fetch("https://1822-200-68-188-0.ngrok-free.app/auth/login", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ email, password }),
@@ -35,7 +35,7 @@ function Login() {
     const handleRegister = async (e) => {
         e.preventDefault();
     
-        const response = await fetch("http://localhost:3001/auth/register", {
+        const response = await fetch("https://1822-200-68-188-0.ngrok-free.app/auth/register", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ nombre: username, email, password }),

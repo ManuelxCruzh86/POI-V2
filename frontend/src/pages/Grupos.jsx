@@ -25,10 +25,11 @@ const GroupCard = ({ id, nombre, descripcion, isCreator, onDelete }) => {
     e.preventDefault();
     if (window.confirm(`¿Estás seguro de que quieres eliminar el grupo "${nombre}"?`)) {
       try {
-        const response = await fetch(`http://localhost:3001/auth/grupos/${id}`, {
+        const response = await fetch(`https://1822-200-68-188-0.ngrok-free.app/auth/grupos/${id}`, {
           method: 'DELETE',
           headers: {
             'Content-Type': 'application/json',
+            "ngrok-skip-browser-warning": "true"
           },
         });
         
@@ -124,7 +125,11 @@ const CreateGroupModal = ({ onClose, onGroupCreated }) => {
   useEffect(() => {
     const fetchUsers = async () => {
       try {
-        const response = await fetch("http://localhost:3001/auth/api/usuarios");
+        const response = await fetch("https://1822-200-68-188-0.ngrok-free.app/auth/api/usuarios", {
+          headers: {
+            "ngrok-skip-browser-warning": "true"
+          }
+        });
         const data = await response.json();
   
         setUsers(data); 
@@ -167,10 +172,11 @@ const CreateGroupModal = ({ onClose, onGroupCreated }) => {
   };
 
   try {
-    const response = await fetch("http://localhost:3001/auth/create/group", {
+    const response = await fetch("https://1822-200-68-188-0.ngrok-free.app/auth/create/group", {
       method: "POST",
       headers: {
-        "Content-Type": "application/json"
+        "Content-Type": "application/json",
+        "ngrok-skip-browser-warning": "true"
       },
       body: JSON.stringify(grupoData)
     });
@@ -334,7 +340,11 @@ console.log("ID del usuario actual:", currentUserId);
 const fetchGroups = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`http://localhost:3001/auth/usuario/${currentUserId}/grupos`);
+      const response = await fetch(`https://1822-200-68-188-0.ngrok-free.app/auth/usuario/${currentUserId}/grupos`, {
+        headers: {
+          "ngrok-skip-browser-warning": "true"
+        }
+      });
       const result = await response.json();
 
       if (result.success) {

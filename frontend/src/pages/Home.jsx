@@ -20,7 +20,7 @@ function Home() {
 
     if (user) {
         try {
-            await fetch(`http://localhost:3001/auth/usuarios/${user.id}/desconectar`, {
+            await fetch(`https://1822-200-68-188-0.ngrok-free.app/auth/usuarios/${user.id}/desconectar`, {
                 method: "PUT"
             });
         } catch (error) {

@@ -4,7 +4,7 @@ import { Link } from "react-router-dom";
 import { io } from "socket.io-client";
 import { LiMensaje, UlMensajes } from './ui-components';
 
-const socket = io("http://localhost:3001");
+const socket = io("https://1822-200-68-188-0.ngrok-free.app/");
 
 const ChatGrupal = () => {
   const [nuevoMensaje, setNuevoMensaje] = useState("");
@@ -31,7 +31,7 @@ const ChatGrupal = () => {
 
      const fetchMensajes = async () => {
       try {
-        const response = await fetch(`http://localhost:3001/mensajes/conversacion-grupo?grupo_id=${grupoId}`);
+        const response = await fetch(`https://1822-200-68-188-0.ngrok-free.app/mensajes/conversacion-grupo?grupo_id=${grupoId}`);
         if (response.ok) {
           const data = await response.json();
           const mensajesFormateados = data.mensajes.map(msg => ({
@@ -94,7 +94,7 @@ console.log("Mensaje recibido:", data.usuario_id, userId);
                 created_at: new Date().toISOString() 
             });
 
-            const response = await fetch('http://localhost:3001/mensajes/enviar-grupo', {
+            const response = await fetch('https://1822-200-68-188-0.ngrok-free.app/mensajes/enviar-grupo', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -126,7 +126,7 @@ console.log("Mensaje recibido:", data.usuario_id, userId);
   
     const cargarUsuarios = async () => {
       try {
-        const response = await fetch(`http://localhost:3001/auth/grupos/${idGrupo}/miembros`);
+        const response = await fetch(`https://1822-200-68-188-0.ngrok-free.app/auth/grupos/${idGrupo}/miembros`);
         const data = await response.json();
         const dataMiembros = data.miembros;
         const otrosUsuarios = dataMiembros.filter(usuario => usuario.conectado === 1);

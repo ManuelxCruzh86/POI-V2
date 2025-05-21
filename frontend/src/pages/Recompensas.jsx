@@ -11,7 +11,7 @@ export default function RewardsSystem() {
   useEffect(() => {
     const fetchRewards = async () => {
       try {
-        const response = await fetch(`http://localhost:3001/auth/grupos/${grupoId}/puntos`);
+        const response = await fetch(`https://1822-200-68-188-0.ngrok-free.app/auth/grupos/${grupoId}/puntos`);
         
         if (!response.ok) {
           throw new Error(`Error: ${response.status}`);
@@ -119,7 +119,7 @@ export default function RewardsSystem() {
                               <img 
                                 src={reward.avatar_url === "default-avatar.png" 
                                   ? "/default-avatar.png" 
-                                  : `http://localhost:3001${reward.avatar_url}`} 
+                                  : `https://1822-200-68-188-0.ngrok-free.app/${reward.avatar_url}`} 
                                 alt={reward.nombre}
                                 className="h-full w-full object-cover"
                                 onError={(e) => (e.target.src = "/default-avatar.png")}

@@ -42,9 +42,10 @@ function Perfil() {
                 return;
             }
 
-            const response = await fetch(`http://localhost:3001/auth/datosUser/${currentUserId}`, {
+            const response = await fetch(`https://1822-200-68-188-0.ngrok-free.app/auth/datosUser/${currentUserId}`, {
                 headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`,
+                    "ngrok-skip-browser-warning": "true"
                 }
             });
 
@@ -75,7 +76,7 @@ function Perfil() {
 
     if (user) {
         try {
-            await fetch(`http://localhost:3001/auth/usuarios/${user.id}/desconectar`, {
+            await fetch(`https://1822-200-68-188-0.ngrok-free.app/auth/usuarios/${user.id}/desconectar`, {
                 method: "PUT"
             });
         } catch (error) {
@@ -126,7 +127,7 @@ function Perfil() {
             formData.append('avatar', archivoFoto);
         }
 
-    const response = await fetch(`http://localhost:3001/auth/actualizarUsuario/${user.id}`, {
+    const response = await fetch(`https://1822-200-68-188-0.ngrok-free.app/auth/actualizarUsuario/${user.id}`, {
       method: 'PUT',
       body: formData,
       headers: {
@@ -178,7 +179,7 @@ function Perfil() {
                     fotoPrevia || 
                     (userData.avatar_url === "default-avatar.png" 
                     ? "/default-avatar.png" 
-                    : `http://localhost:3001${userData.avatar_url}`) || 
+                    : `https://1822-200-68-188-0.ngrok-free.app/${userData.avatar_url}`) || 
                     "/anonimo.png"
                 } 
                 alt="Foto de perfil" 

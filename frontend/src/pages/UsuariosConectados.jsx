@@ -5,7 +5,7 @@ function UsuariosConectados() {
   
   useEffect(() => {
     const cargarUsuarios = async () => {
-      const response = await fetch("http://localhost:3001/usuarios");
+      const response = await fetch("https://1822-200-68-188-0.ngrok-free.app/usuarios");
       const data = await response.json();
       setUsuarios(data);
     };

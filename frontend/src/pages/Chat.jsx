@@ -59,8 +59,11 @@ function ChatIndividual() {
     }
   }, [isMicOn, isVideoOn, isOpen]);
 
-  const socket = io("http://localhost:3001", {
-    auth: { token: localStorage.getItem("token") }
+  const socket = io("https://1822-200-68-188-0.ngrok-free.app/", {
+    auth: { token: localStorage.getItem("token") },
+    headers: {
+      "ngrok-skip-browser-warning": "true",
+    }
   });
 
   useEffect(() => {
@@ -83,7 +86,11 @@ function ChatIndividual() {
   useEffect(() => {
     const cargarUsuarios = async () => {
       try {
-        const response = await fetch(`http://localhost:3001/auth/grupos/${groupId}/miembros`);
+        const response = await fetch(`https://1822-200-68-188-0.ngrok-free.app/auth/grupos/${groupId}/miembros`, {
+          headers: {
+            "ngrok-skip-browser-warning": "true"
+          }
+        });
         const data = await response.json();
         const dataMiembros = data.miembros;
         const otrosUsuarios = dataMiembros.filter(usuario => usuario.id !== idLogged);
@@ -150,7 +157,11 @@ function ChatIndividual() {
     const grupoIdRef = localStorage.getItem("tempGroupId");
 
     try {
-      const res = await fetch(`http://localhost:3001/mensajes/conversacion?usuario1=${remitenteId}&usuario2=${usuarioId}&grupoId=${grupoIdRef}`);
+      const res = await fetch(`https://1822-200-68-188-0.ngrok-free.app/mensajes/conversacion?usuario1=${remitenteId}&usuario2=${usuarioId}&grupoId=${grupoIdRef}`, {
+        headers: {
+          "ngrok-skip-browser-warning": "true",
+        }
+      });
       const data = await res.json();
       if (data.success) {
         const mensajesDescifrados = data.mensajes.map(msg => ({
@@ -158,7 +169,7 @@ function ChatIndividual() {
           contenido: msg.es_cifrado ? descifrarMensaje(msg.contenido) : msg.contenido,
           archivo:
             msg.tipo === "archivo"
-              ? `http://localhost:3001/uploads/${msg.contenido}`
+              ? `https://1822-200-68-188-0.ngrok-free.app/uploads/${msg.contenido}`
               : msg.tipo === "ubicación"
               ? msg.contenido
               : null,
@@ -191,10 +202,11 @@ function ChatIndividual() {
         };
 
         try {
-          const response = await fetch("http://localhost:3001/mensajes/privado", {
+          const response = await fetch("https://1822-200-68-188-0.ngrok-free.app/mensajes/privado", {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
+              "ngrok-skip-browser-warning": "true",
             },
             body: JSON.stringify(payload),
           });
@@ -235,9 +247,12 @@ function ChatIndividual() {
       formData.append("es_cifrado", cifrado ? 1 : 0);
 
       try {
-        const res = await fetch("http://localhost:3001/mensajes/archivo", {
+        const res = await fetch("https://1822-200-68-188-0.ngrok-free.app/mensajes/archivo", {
           method: "POST",
           body: formData,
+          headers: {
+            "ngrok-skip-browser-warning": "true",
+          }
         });
 
         const result = await res.json();
@@ -272,10 +287,11 @@ function ChatIndividual() {
     };
 
     try {
-      const response = await fetch("http://localhost:3001/mensajes/privado", {
+      const response = await fetch("https://1822-200-68-188-0.ngrok-free.app/mensajes/privado", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          "ngrok-skip-browser-warning": "true",
         },
         body: JSON.stringify(payload),
       });
@@ -380,7 +396,7 @@ function ChatIndividual() {
                             <img src={msg.archivo} alt="Archivo" className="max-w-full h-auto rounded-lg" />
                           ) : (
                             <a 
-                              href={`http://localhost:3001/mensajes/descargar/${msg.archivo.split("/").pop()}`} 
+                              href={`https://1822-200-68-188-0.ngrok-free.app/mensajes/descargar/${msg.archivo.split("/").pop()}`} 
                               className="text-blue-400 underline"
                             >
                               Descargar archivo: {msg.contenido}

@@ -1,8 +1,11 @@
 import { useState, useEffect } from "react";
 import { io } from "socket.io-client";
 
-const socket = io("http://localhost:3001", {
-  auth: { token: localStorage.getItem("token") }
+const socket = io("https://1822-200-68-188-0.ngrok-free.app/", {
+  auth: { token: localStorage.getItem("token") },
+  headers: {
+    "ngrok-skip-browser-warning": "true",
+  }
 })
 
 export function useMembers(groupId) {
@@ -11,7 +14,11 @@ export function useMembers(groupId) {
   useEffect(() => {
     const cargarUsuarios = async () => {
       try {
-        const response = await fetch(`http://localhost:3001/auth/grupos/${groupId}/miembros`);
+        const response = await fetch(`https://1822-200-68-188-0.ngrok-free.app/auth/grupos/${groupId}/miembros`, {
+          headers: {
+            "ngrok-skip-browser-warning": "true",
+          }
+        });
         const data = await response.json();
         setMembers(data.miembros);
       } catch (error) {

@@ -148,7 +148,7 @@ router.post("/archivo", upload.single("archivo"), async (req, res) => {
     req.io.to(destinatario_id.toString()).emit("nuevo_mensaje", {
       remitente_id,
       contenido: archivo.originalname,
-      archivo: `http://localhost:3001/uploads/${archivo.filename}`,
+      archivo: `http://10.100.225.56:3001/uploads/${archivo.filename}`,
       tipo: "archivo",
       es_cifrado: es_cifrado || 0,
       fecha: new Date()
@@ -161,7 +161,7 @@ router.post("/archivo", upload.single("archivo"), async (req, res) => {
       mensaje: {
         id: mensajeId,
         contenido: archivo.originalname,
-        archivo: `http://localhost:3001/uploads/${archivo.filename}`,
+        archivo: `http://10.100.225.56:3001/uploads/${archivo.filename}`,
         tipo: "archivo"
       }
     });
